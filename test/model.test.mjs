@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, cp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, cp, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { controlBody, deriveTier, fields, fingerprint, loadConfig, marker, parseIntake, planIssues } from '../scripts/model.mjs';
@@ -32,8 +32,16 @@ test('intake rejects missing, ambiguous, multiline, and malicious values', () =>
 });
 
 test('default catalog and tier config load with all controls', async () => {
-  const { catalog, tierConfig } = await loadConfig();
+  const { catalog, tierConfig, workPackages } = await loadConfig();
   assert.equal(catalog.length, 14);
+  assert.equal(Object.keys(workPackages).length, catalog.length);
+  for (const control of catalog) {
+    const work = workPackages[control.id];
+    assert(['citizen', 'platform', 'security', 'data'].includes(work.owner_role), control.id);
+    assert(work.evidence_template.length, control.id);
+    assert(work.evidence_examples.acceptable.length, control.id);
+    assert(work.evidence_examples.insufficient.length, control.id);
+  }
   assert.equal(deriveTier(answers, tierConfig), 'Low');
   for (const override of [
     { data: 'Confidential' }, { audience: 'Organization-wide' },
@@ -76,8 +84,10 @@ test('issue bodies have guidance, evidence criteria, Copilot prompts and stable 
   const tag = marker('example/hub', 1, catalog[0].id);
   const body = controlBody(catalog[0], tag, {
     source: 'https://github.com/example/hub/issues/1', tier: 'Low', guide: 'https://example.github.io/hub',
+    workPackages: (await loadConfig()).workPackages,
   });
   for (const required of [tag, '## Why this matters', '## Steps', '## Acceptance criteria',
+    '## Work package', '## Evidence to attach', '**Acceptable**', '**Insufficient**',
     '## Suggested Copilot prompts', 'https://example.github.io/hub/controls.html#ownership']) {
     assert(body.includes(required));
   }
@@ -99,6 +109,10 @@ test('catalog rejects malformed controls and policy; tier precedence is normaliz
     await writeFile(join(directory, 'controls/bad.yml'), JSON.stringify(missingId));
     await assert.rejects(loadConfig(directory), /Invalid control/);
     await rm(join(directory, 'controls/bad.yml'));
+    const packagePath = join(directory, 'config/work-packages.yml');
+    const packages = await readFile(packagePath, 'utf8');
+    await writeFile(packagePath, packages.replace('  depends_on: []', '  depends_on: [repository-hygiene]'));
+    await assert.rejects(loadConfig(directory), /Cyclic work-package dependency/);
     await writeFile(join(directory, 'config/policy.yml'), 'allowed_repositories: ["https://evil.example/repo"]\n');
     await assert.rejects(loadConfig(directory), /Invalid config/);
   } finally {

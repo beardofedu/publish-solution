@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ApiError, GitHub } from '../scripts/github.mjs';
+import { ApiError, GitHub, upsertComment } from '../scripts/github.mjs';
 
 test('API client authenticates, refuses redirects, and encodes JSON without leaking token errors', async () => {
   const client = new GitHub('test-secret', 'https://api.github.com', async (url, options) => {
@@ -23,6 +23,17 @@ test('pagination includes closed controls beyond the first page', async () => {
   const client = new GitHub('token', undefined, async url => {
     calls.push(url);
     return new Response(JSON.stringify(url.endsWith('page=1') ? Array.from({ length: 100 }, (_, i) => i) : [100]));
+  });
+
+  test('upserted comments avoid needless edits when reminder content is unchanged', async () => {
+    let writes = 0;
+    const api = {
+      pages: async () => [{ id: 2, user: { login: 'github-actions[bot]' }, body: '<!-- tag -->\nbody' }],
+      request: async () => { writes++; },
+    };
+    const result = await upsertComment(api, 'example/hub', 1, '<!-- tag -->', 'body');
+    assert.equal(result.id, 2);
+    assert.equal(writes, 0);
   });
   assert.equal((await client.pages('/repos/example/solution/issues?state=all')).length, 101);
   assert(calls[1].includes('state=all&per_page=100&page=2'));

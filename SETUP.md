@@ -33,10 +33,10 @@ The publication form now also requires a solution description (purpose and AI be
 | Form / label | Governance action |
 | --- | --- |
 | Change or re-assessment / `reassessment-request` | Verify and cross-link the original request and same target repository; remove its readiness/approval while review is pending. Reopen the original if needed, update its structured risk answers and record the change, then comment `/publish` **on the original**. Automation re-tiers, reuses existing parent/controls, and creates only missing applicable controls; changed scope reopens required existing controls for fresh evidence. Complete controls, `/validate`, and obtain fresh human approval; record the result in the reassessment issue. A different target requires a new publication request. |
-| Control exception / `control-exception` | Verify the catalog control ID, affected issue, justification, compensating controls/evidence, real expiry date, and risk owner's authority. Assign a reviewer, record explicit approval/rejection and conditions, link the decision to the original/control issue, and arrange expiry review in your approved tracking system. No automatic waiver, reminders, renewal, closure of controls, or FAIL/UNKNOWN bypass occurs. |
+| Control exception / `control-exception` | Verify the catalog control ID, affected issue, justification, compensating controls/evidence, real expiry date, and risk owner's authority. Assign a reviewer, record explicit approval/rejection and conditions, link the decision to the original/control issue, and arrange expiry review. The daily lifecycle sweep comments on tracked open or closed records that are due (within seven days), expired, or incomplete; it does not infer approval, renew, close controls, or bypass FAIL/UNKNOWN. |
 | Decommission / `decommission-request` | Obtain business/technical/data/platform/governance decisions before destructive actions; verify communications, resource/access retirement, credential revocation, billing, retention/legal holds, and disposal evidence. Operators execute the approved work manually. Remove original readiness/approval, record retirement, and close the original to stop scheduled validation, preserving audit history. |
 
-Opening a manual lifecycle form does not automatically clear original labels or change cloud resources. Do not run `/publish` or `/validate` on these forms. Closing one does not itself approve a change, accept risk, or verify retirement. Follow the full [rendered lifecycle runbooks](https://beardofedu.github.io/publish-solution/requests.html); update that URL in your own instance.
+An authorized hub collaborator opening, editing, or reopening a reassessment form automatically clears `ready-for-review` and `approved-for-production` on the verified same-hub original publication request and adds a visible linkage comment. The request issue is never used to create a second plan. Governance must still update and rerun `/publish` on the original. Do not run `/publish` or `/validate` on lifecycle forms. Closing one does not itself approve a change, accept risk, or verify retirement. Follow the full [rendered lifecycle runbooks](https://beardofedu.github.io/publish-solution/requests.html); update that URL in your own instance.
 
 ## 2. Choose target authentication
 
@@ -70,7 +70,13 @@ Configure this **Actions secret**:
 | --- | --- |
 | `SOLUTION_APP_PRIVATE_KEY` | The App's PEM private key |
 
-The bundled workflows use `actions/create-github-app-token` to mint a short-lived installation token and revoke it in the action's post step. List repository names explicitly to narrow token scope. If this variable is empty, the token action may select all repositories in that installation; prefer a selected-repository installation and an explicit list.
+The bundled workflows use `actions/create-github-app-token` to mint a short-lived installation token and revoke it in the action's post step. Before token creation, a local guard requires `SOLUTION_APP_REPOSITORIES` to exactly match the reviewed allowlist under one installation owner; it rejects blank, duplicated, prefixed, missing, or extra names. This list does not replace the App installation selection; the App installation, token list, and policy allowlist must all match.
+
+### Safe configuration preflight
+
+From the trusted governance checkout, run `npm run preflight` for static checks. It requires no credentials and performs no network calls or writes. It reports an empty/invalid allowlist, invalid target names, targets matching the hub, out-of-allowlist targets, and what cannot be inspected without live access.
+
+Optional `npm run preflight -- --live` performs read-only GitHub API requests. Set `GITHUB_REPOSITORY=owner/hub`, `HUB_TOKEN` with approved read access to the hub Actions variables/secrets metadata, and optionally `SOLUTION_TOKEN` for selected-target repository/issue reads. Add `--target owner/name` to select a target; targets not explicitly allowlisted are never queried. It checks that configured variable/secret *names* are visible and that App repository names exactly match the allowlist under the configured owner. It never prints secret/token values, proves that a secret is valid, proves target issue-write access, or fully verifies Administration/code-scanning feature permissions. GitHub does not return secret plaintext through these reads. Treat hidden names, 403/404, and unknown product features as unresolved; use an authorized pilot for actual permissions. No bootstrap installation, App, credential, label, setting, or cloud resource is created by either mode.
 
 One workflow token addresses **one installation owner**. For multiple organizations, run separate governance instances or extend token routing with an explicit, reviewed per-owner mapping. Do not try to use a token from one installation for another.
 
@@ -125,7 +131,7 @@ Push a docs change to `main` or manually run **Publish guide**. The site publish
 
 ## 5. Pilot the full flow
 
-Use a disposable solution repository you own and synthetic intake data:
+Use a disposable solution repository you own and synthetic intake data. The local fixture-backed cross-repository tests are repeatable with `npm test`; the separately described **live pilot is opt-in and customer-executed only**. It was not run as part of this toolkit change.
 
 1. Allowlist the target and configure credentials with the exact repository scope.
 2. Submit the form. As a hub maintainer, comment `/publish` if automatic intake was not authorized.
@@ -155,7 +161,7 @@ Repeat all three scope updates for every new target: add it to the App installat
 | Scan exists but fails gate | The latest 100 analyses must include a successful, recent analysis at the exact current default-branch commit |
 | Non-Azure OIDC | The stock detector is Azure-specific; implement and test an approved equivalent or record a separate human decision |
 | State missing / duplicate markers | Investigate target issues and bot state before retrying; do not hide duplicates by closing them |
-| Approved label removed | Intake changes, failed validation, or detected gaps invalidate the old advisory decision; review again |
+| Approved label removed | Intake changes, a changed default-branch commit, failed validation, or detected gaps invalidate the old advisory decision; review again |
 
 Readiness is point-in-time. The daily schedule processes **open** labeled requests and may be delayed by GitHub. Keep requests open while monitoring readiness. API/network failures fail the workflow and remove advisory approval where possible; an outage can prevent even label updates, so production must never trust labels as its sole gate.
 

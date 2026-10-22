@@ -8,6 +8,12 @@ Use disposable **selected, non-production** solution repositories with the inten
 
 For the narrower **toolkit installation pilot**, follow the [rendered walkthrough](https://beardofedu.github.io/publish-solution/setup.html#pilot): prove request access, authorized processing, exact generated issues, rerun recovery and honest validation gaps. Record this as a scoped subset of the matrix below, not full go-live approval. No target toolkit workflow or Azure resources/credentials are needed for that subset. The full matrix includes separate workload security/deployment and enterprise service-launch evidence.
 
+## Reproducible local fixture
+
+Run `npm ci --ignore-scripts`, `npm test`, `npm run check`, and `npm run preflight` before the customer pilot. `test/publish.test.mjs` is a mocked cross-repository integration fixture using the real catalog and simulated GitHub API; it covers stable issue markers, partial-run recovery, authorization, allowlist enforcement, evidence completion, validation gaps, and advisory labels. `examples/scenario.md` and `examples/triage-helper/` provide a local sample and explicitly synthetic intake, evidence, and handoff walkthrough. These are software fixtures, not observed live integration results or customer evidence.
+
+The live procedure below is **opt-in and customer-executed**. It requires explicit customer authorization, a disposable hub/target, approved narrowly scoped credentials, and an independent observer. No App, secret, repository setting, issue, cloud resource, or live pilot is created by these tests or by this documentation change. Mark every unexecuted live row unverified; do not convert mock results into a pilot pass.
+
 ## 1. Prepare the test record
 
 - [ ] Complete gates 1-6 and freeze the implementation and control-catalog commit.
@@ -26,7 +32,7 @@ For the narrower **toolkit installation pilot**, follow the [rendered walkthroug
 | P05 | Invoke `/validate` with open controls, then close one as not planned/duplicate rather than completed | Not ready in each case; actionable evidence identifies the incomplete controls |
 | P06 | Close every control but deliberately leave one security prerequisite unsatisfied | Not ready; correct failing check is reported. Repeat separately for secret scanning, push protection, dependencies, CodeQL, rulesets, CODEOWNERS, SECURITY.md, committed `.env` fixture and OIDC-workflow requirements within validator scope |
 | P07 | Remove needed App permission/repository selection in an isolated pilot; test expired/revoked PAT if that path is supported | Authentication/authorization failure is explicit; missing security fields/403/404 cannot become a pass |
-| P08 | Complete controls and restore the approved baseline, then validate | `ready-for-review` appears only after required checks pass; **no automatic production approval** |
+| P08 | Complete controls and restore the approved baseline, then validate | `ready-for-review` appears only after required checks pass; package records timestamp/current commit/control evidence locations and keeps named governance decision and separate platform acceptance PENDING; **no automatic production approval** |
 | P09 | Ordinary requester invokes `/validate` and attempts approval/label changes; authorized governance reviewer performs approval | Actual behavior matches approved authority model; unauthorized production access is denied independently of a mutable label |
 | P10 | Reopen a control, change intake/catalog, or change material code/settings after readiness/approval, then revalidate | Failed/gapped validation removes advisory readiness/approval; changed intake/catalog requires `/publish` and refreshed controls/evidence. Keep request open and prove daily/manual sweep behavior. Production never trusts a stale label during an outage |
 | P11 | Try direct push, unreviewed workflow/control changes and CODEOWNERS changes | Branch/review protections reject unauthorized changes; approved maintainer path still works |

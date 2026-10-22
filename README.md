@@ -8,6 +8,10 @@ A public, adaptable toolkit for citizen developers turning AI-built prototypes i
 
 Administrators: follow the **[enterprise installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html)** from an empty customer-owned hub to a synthetic citizen-developer pilot, then use the existing [enterprise readiness runbook and sign-off](enterprise-setup/README.md) for broader launch decisions. Issue generation runs in the hub: no toolkit workflow in solution repositories, Azure resources or cloud credentials are needed just to create the plan.
 
+## Choose a path
+
+**Path A is the default:** prepare a reviewed readiness package, then hand deployment to the customer platform team and its independently protected release process. Optional **Path B** adds incomplete Azure deployment/IaC reference snippets; optional **Path C** documents a protected release integration design. Neither B nor C implements or activates deployment. See the [three-path chooser](https://beardofedu.github.io/publish-solution/paths.html).
+
 ## How it works
 
 1. Open **Request publication** with the solution repository, owner team aliases, data classification, exposure, audience, runtime AI usage, integrations, and hosting.
@@ -31,15 +35,18 @@ The publication form also collects a solution description (including AI behavior
 
 Highest matching tier wins: external exposure, regulated/personal/payment data, or privileged integrations are **High**. Confidential data, broad audiences, business-system writes, or runtime LLM use are **Moderate**. Otherwise the default is **Low**. The rules are configurable, not a universal risk model.
 
+The generated validation report includes a handoff package with the current validation timestamp and default-branch commit, applicable control/evidence locations, automated status, unresolved gaps, and blank decision fields for named governance review and separate platform acceptance. Those decision fields are deliberately not filled by automation.
+
 ## Included
 
 | Surface | Purpose |
 | --- | --- |
 | `.github/ISSUE_TEMPLATE/` | Structured intake with public-data warning |
 | `.github/workflows/` | Intake, validation, daily sweep, CI, and Pages publication |
-| `config/` | Exact target allowlist, trigger permissions, tier rules |
-| `controls/*.yml` | 14 controls covering ownership, repo hygiene, secrets, dependencies, code scanning, identity, data, AI, delivery, runtime, operations, resilience, and independent review |
-| `scripts/` | Node.js automation, API client, conservative detectors, catalog validation |
+| `config/` | Exact target allowlist, trigger permissions, tier rules, and per-control role/dependency/evidence packages |
+| `controls/*.yml` | 14 control definitions covering ownership, repo hygiene, secrets, dependencies, code scanning, identity, data, AI, delivery, runtime, operations, resilience, and independent review |
+| `scripts/` | Node.js automation, read-only setup diagnostics, lifecycle reminders, API client, conservative detectors, catalog validation |
+| `examples/` | Local-only reference app and a fully synthetic start-to-handoff walkthrough |
 | `test/` | Unit and mocked cross-repository integration tests |
 | `docs/` | Responsive, accessible static HTML guide; no build step or external assets |
 | `action.yml` | Composite Action for using the toolkit from another governance repository |
@@ -54,15 +61,20 @@ The target allowlist starts **empty**. Configure a selected-repository **GitHub 
 npm ci --ignore-scripts
 npm test
 npm run check
+npm run preflight
 ```
 
 Node.js 22+ is required. CI also runs `actionlint`.
+
+`npm run preflight` is static and read-only; it needs no credentials. `npm run preflight -- --live` optionally inspects repository-scoped Actions variable/secret names and selected-target read access with `GITHUB_REPOSITORY`, `HUB_TOKEN`, and optionally `SOLUTION_TOKEN`; organization/environment-scoped values are not enumerated. It never prints token/secret values, writes resources, or claims a visible secret is valid. Bundled App workflows refuse to mint an installation token unless `SOLUTION_APP_REPOSITORIES` exactly matches the reviewed allowlist for its one installation owner.
 
 **Do not submit secrets, customer-specific information, personal data, or sensitive architecture to this public repository.** Organizations should use a private governance instance for confidential intakes and review their Pages publishing visibility.
 
 ## Boundaries
 
 This toolkit is **not a compliance certification, penetration test, cloud scanner, deployment engine, or authorization system**. Issue closure and labels are mutable advisory signals. Configuration checks cannot prove alert remediation, cloud trust, actual deployment, network isolation, data handling, or evidence quality. Daily validation can lag, and closed requests are not revalidated.
+
+Daily lifecycle sweeps add due/expired/incomplete exception reminders but never renew exceptions or bypass FAIL/UNKNOWN checks. Opening or editing an authorized reassessment clears advisory labels on its linked original publication request; governance still updates that original request and reruns `/publish`.
 
 Controls are cloud-agnostic; deployment guidance and the stock OIDC detector focus on Azure. For other clouds, implement a reviewed equivalent detector or record a separate governance decision without representing an automatic PASS. No customer-specific data or policies are included.
 

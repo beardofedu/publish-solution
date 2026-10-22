@@ -8,6 +8,7 @@
   "scripts": {
     "test": "node --test",
     "check": "node scripts/check.mjs",
+    "preflight": "node scripts/diagnose.mjs",
     "intake": "node scripts/run.mjs intake",
     "validate": "node scripts/run.mjs validate"
   },

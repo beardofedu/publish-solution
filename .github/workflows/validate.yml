@@ -34,6 +34,13 @@ jobs:
         run: node scripts/preflight.mjs
         env:
           HUB_TOKEN: ${{ github.token }}
+      - name: Require an explicit App repository list
+        run: node scripts/guard-app-scope.mjs
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SOLUTION_APP_ID: ${{ vars.SOLUTION_APP_ID }}
+          SOLUTION_APP_OWNER: ${{ vars.SOLUTION_APP_OWNER }}
+          SOLUTION_APP_REPOSITORIES: ${{ vars.SOLUTION_APP_REPOSITORIES }}
       - name: Create installation token (recommended)
         if: vars.SOLUTION_APP_ID != ''
         id: app

@@ -48,8 +48,12 @@ export async function upsertComment(api, repo, issue, tag, body) {
   const comments = await api.pages(`/repos/${repo}/issues/${issue}/comments`);
   const existing = comments.find(comment =>
     comment.user?.login === 'github-actions[bot]' && comment.body?.startsWith(tag));
-  if (existing) return api.request('PATCH', `/repos/${repo}/issues/comments/${existing.id}`, { body: `${tag}\n${body}` });
-  return api.request('POST', `/repos/${repo}/issues/${issue}/comments`, { body: `${tag}\n${body}` });
+  const rendered = `${tag}\n${body}`;
+  if (existing) {
+    if (existing.body === rendered) return existing;
+    return api.request('PATCH', `/repos/${repo}/issues/comments/${existing.id}`, { body: rendered });
+  }
+  return api.request('POST', `/repos/${repo}/issues/${issue}/comments`, { body: rendered });
 }
 
 export async function setLabels(api, repo, issue, add, remove = []) {

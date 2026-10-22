@@ -61,6 +61,7 @@ export function detectorApi({ override = {}, truncated = false, scanSha = 'abc12
         }
       }
       if (path.endsWith('/vulnerability-alerts')) return null;
+      if (path === '/repos/example/solution') return { default_branch: 'main' };
       if (path.includes('/branches/main/protection')) {
         if (classic) return { required_pull_request_reviews: { required_approving_review_count: 1 } };
         throw Object.assign(new Error('missing protection'), { status: 404 });
@@ -90,26 +91,27 @@ export const metadata = {
 const policy = { scan_max_age_days: 30 };
 
 test('detectors pass supported configuration and recognize active PR rules', async () => {
-  const checks = await automatedChecks(detectorApi(), 'example/solution', metadata, policy);
-  assert.equal(checks.length, 8);
+  const { checks, commitSha } = await automatedChecks(detectorApi(), 'example/solution', metadata, policy);
+  assert.equal(checks.length, 9);
+  assert.equal(commitSha, 'abc123');
   assert(checks.every(check => check.status === 'PASS'), JSON.stringify(checks));
-  const classicChecks = await automatedChecks(detectorApi({ classic: true, rules: false }), 'example/solution', metadata, policy);
+  const { checks: classicChecks } = await automatedChecks(detectorApi({ classic: true, rules: false }), 'example/solution', metadata, policy);
   assert(classicChecks.every(check => check.status === 'PASS'));
 });
 
 test('unavailable settings and truncated tree remain unknown; stale scans fail', async () => {
-  const checks = await automatedChecks(detectorApi({ truncated: true, scanTime: '2020-01-01' }), 'example/solution',
+  const { checks } = await automatedChecks(detectorApi({ truncated: true, scanTime: '2020-01-01' }), 'example/solution',
     { default_branch: 'main' }, policy);
   assert.equal(checks.find(check => check.name.startsWith('Secret')).status, 'UNKNOWN');
   assert.equal(checks.find(check => check.name.startsWith('No committed')).status, 'UNKNOWN');
   assert.equal(checks.find(check => check.name.startsWith('Code scanning')).status, 'FAIL');
-  const wrongHead = await automatedChecks(detectorApi({ scanSha: 'old' }), 'example/solution', metadata, policy);
+  const { checks: wrongHead } = await automatedChecks(detectorApi({ scanSha: 'old' }), 'example/solution', metadata, policy);
   assert.equal(wrongHead.find(check => check.name.startsWith('Code scanning')).status, 'FAIL');
 });
 
 test('missing required protection fails and permission errors do not pass', async () => {
   const error = Object.assign(new Error('forbidden'), { status: 403 });
-  const checks = await automatedChecks(detectorApi({ rules: false, override: { '/vulnerability-alerts': error } }),
+  const { checks } = await automatedChecks(detectorApi({ rules: false, override: { '/vulnerability-alerts': error } }),
     'example/solution', metadata, policy);
   assert.equal(checks.find(check => check.name.startsWith('Default-branch')).status, 'FAIL');
   assert.equal(checks.find(check => check.name.startsWith('Dependabot')).status, 'UNKNOWN');
@@ -119,4 +121,30 @@ test('server and network errors are explicit failures, not synthetic successful 
   const error = Object.assign(new Error('server error'), { status: 500 });
   await assert.rejects(automatedChecks(detectorApi({ override: { '/vulnerability-alerts': error } }),
     'example/solution', metadata, policy), /server error/);
+});
+
+test('a default-branch change during checks blocks readiness', async () => {
+  const api = detectorApi();
+  const request = api.request;
+  let reads = 0;
+  api.request = async (method, path) => {
+    if (path === '/repos/example/solution/branches/main') {
+      reads++;
+      return { commit: { sha: reads === 1 ? 'abc123' : 'def456' } };
+    }
+    return request(method, path);
+  };
+  const { checks, commitSha } = await automatedChecks(api, 'example/solution', metadata, policy);
+  assert.equal(commitSha, 'abc123');
+  assert.equal(checks.find(check => check.name === 'Default-branch validation basis').status, 'FAIL');
+  const branchApi = detectorApi();
+  const branchRequest = branchApi.request;
+  branchApi.request = async (method, path) => {
+    if (path === '/repos/example/solution') {
+      return { default_branch: 'trunk' };
+    }
+    return branchRequest(method, path);
+  };
+  const { checks: branchChecks } = await automatedChecks(branchApi, 'example/solution', metadata, policy);
+  assert.equal(branchChecks.find(check => check.name === 'Default-branch validation basis').status, 'FAIL');
 });
