@@ -19,18 +19,6 @@ body:
       placeholder: contoso/team-helper
     validations:
       required: true
-  - type: textarea
-    id: solution_description
-    attributes:
-      label: Solution description
-      description: Explain the business purpose, what the app does, and how AI helped build it or is used at runtime. Use non-sensitive examples.
-      placeholder: |
-        Purpose and intended users:
-        Main capabilities and data flows:
-        AI-assisted development:
-        Runtime AI behavior (or none):
-    validations:
-      required: true
   - type: input
     id: business
     attributes:
@@ -86,6 +74,21 @@ body:
     attributes:
       label: Target hosting
       options: [Azure, Other cloud, Undecided]
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: '<!-- publish-solution:metadata -->'
+  - type: textarea
+    id: solution_description
+    attributes:
+      label: Solution description
+      description: Explain the business purpose, what the app does, and how AI helped build it or is used at runtime. Use non-sensitive examples.
+      placeholder: |
+        Purpose and intended users:
+        Main capabilities and data flows:
+        AI-assisted development:
+        Runtime AI behavior (or none):
     validations:
       required: true
   - type: input

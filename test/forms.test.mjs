@@ -17,7 +17,8 @@ const originalBody = Object.entries(publicationAnswers)
   .map(([key, value]) => `### ${fields[key]}\n\n${value}`).join('\n\n');
 
 function renderBody(template, answers) {
-  return template.body.filter(field => field.type !== 'markdown').map(field => {
+  return template.body.map(field => {
+    if (field.type === 'markdown') return field.attributes.value;
     const value = field.type === 'checkboxes'
       ? field.attributes.options.map(option => `- [X] ${option.label}`).join('\n')
       : answers[field.id];
@@ -86,6 +87,13 @@ test('rendered publication parses existing fields; metadata does not affect risk
     const highRisk = body.replace('### Exposure\n\nInternal', '### Exposure\n\nExternal');
     assert.equal(deriveTier(parseIntake(highRisk), config.tierConfig), 'High');
   }
+  const descriptionWithFieldHeading = renderBody(template, {
+    ...publicationAnswers,
+    solution_description: 'The app provides team guidance.\n\n### Integrations\n\nIt connects to no external services.',
+    go_live_date: '2027-01-31',
+    target_environment: 'prod',
+  });
+  assert.deepEqual(parseIntake(descriptionWithFieldHeading), parseIntake(originalBody));
 });
 
 test('all four forms have valid unique IDs, safe submission guidance and required attestations', async () => {
