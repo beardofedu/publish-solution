@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import { loadConfig, repositoryPattern } from './model.mjs';
 
-const repoName = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+const repoName = /^(?!\.{1,2}$)[a-zA-Z0-9_.-]+$/;
 
 export function appRepositoryNames(appId, value) {
   if (appId === undefined || appId === '') return [];
