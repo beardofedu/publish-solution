@@ -97,7 +97,7 @@ export async function loadConfig(root = process.cwd()) {
   const catalog = [];
   for (const file of (await readdir(resolve(root, 'controls'))).filter(name => name.endsWith('.yml')).sort()) {
     const control = await yaml(`controls/${file}`);
-    if (!/^[a-z][a-z0-9-]+$/.test(control.id) || control.id === 'parent' ||
+    if (typeof control.id !== 'string' || !/^[a-z][a-z0-9-]+$/.test(control.id) || control.id === 'parent' ||
         catalog.some(item => item.id === control.id) ||
         !Array.isArray(control.tiers) || !control.tiers.length ||
         control.tiers.some(tier => !tiers.includes(tier)) ||

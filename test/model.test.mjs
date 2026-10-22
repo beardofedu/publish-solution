@@ -94,6 +94,10 @@ test('catalog rejects malformed controls and policy; tier precedence is normaliz
     assert.equal(deriveTier({ ...answers, exposure: 'External', ai: 'Yes' }, config.tierConfig), 'High');
     await writeFile(join(directory, 'controls/bad.yml'), 'id: broken\ntiers: [Low]\n');
     await assert.rejects(loadConfig(directory), /Invalid control/);
+    const missingId = { ...config.catalog[0] };
+    delete missingId.id;
+    await writeFile(join(directory, 'controls/bad.yml'), JSON.stringify(missingId));
+    await assert.rejects(loadConfig(directory), /Invalid control/);
     await rm(join(directory, 'controls/bad.yml'));
     await writeFile(join(directory, 'config/policy.yml'), 'allowed_repositories: ["https://evil.example/repo"]\n');
     await assert.rejects(loadConfig(directory), /Invalid config/);
