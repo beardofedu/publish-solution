@@ -278,6 +278,25 @@ test('catalog changes require republishing even if all old issues are complete',
   await assert.rejects(validateRequest(f.args), /changed/);
 });
 
+test('scheduled validation cannot restore readiness after reassessment invalidates the saved plan', async () => {
+  const f = await fixture({ checksPass: true });
+  await intakeRequest(f.args);
+  const stateComment = f.comments.find(comment => comment.body.startsWith('<!-- publish-solution:state -->'));
+  const state = JSON.parse(stateComment.body.match(/<!-- state-json:({[^\n]+}) -->/)[1]);
+  Object.assign(state, { reassessmentInvalidated: true, reassessmentIssue: 30 });
+  stateComment.body = stateComment.body.replace(/<!-- state-json:{[^\n]+} -->/,
+    `<!-- state-json:${JSON.stringify(state)} -->`);
+  f.labels.add('ready-for-review');
+  await assert.rejects(validateRequest(f.args), /invalidated by a reassessment request/);
+  assert(!f.labels.has('ready-for-review'));
+  assert(stateComment.body.includes('"parent":'));
+  assert(stateComment.body.includes('"reassessmentInvalidated":true'));
+  await intakeRequest(f.args);
+  const refreshedState = JSON.parse(stateComment.body.match(/<!-- state-json:({[^\n]+}) -->/)[1]);
+  assert.equal(refreshedState.reassessmentInvalidated, undefined);
+  assert.equal(refreshedState.parent, state.parent);
+});
+
 test('work-package changes require republishing and fresh evidence', async () => {
   const f = await fixture();
   await intakeRequest(f.args);

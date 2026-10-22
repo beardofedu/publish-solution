@@ -150,6 +150,9 @@ export async function validateRequest({ hubApi, targetApi, hub, issue, config })
   if (!state || state.repository !== intake.repository || state.basis !== basis) {
     throw new Error('No current intake plan: request or catalog changed. A maintainer must run /publish before validation.');
   }
+  if (state.reassessmentInvalidated) {
+    throw new Error('Publication plan was invalidated by a reassessment request. An authorized maintainer must run /publish before validation.');
+  }
   const root = `/repos/${intake.repository}`;
   const metadata = await targetApi.request('GET', root);
   if (metadata.archived || metadata.disabled || !metadata.has_issues) throw new Error('The solution repository is not active.');

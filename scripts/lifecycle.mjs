@@ -123,6 +123,10 @@ export async function invalidateForReassessment({ hubApi, hub, issue }) {
   if (!saved?.repository || saved.repository.toLowerCase() !== requestRepository) {
     throw new Error('Reassessment repository does not match the original publication plan; governance must correct the link or open a new request.');
   }
+  const invalidatedState = { ...saved, reassessmentInvalidated: true, reassessmentIssue: issue.number };
+  const stateBody = stateComment.body.slice(stateTag.length).trimStart()
+    .replace(stateMatch[0], `<!-- state-json:${JSON.stringify(invalidatedState)} -->`);
+  await upsertComment(hubApi, hub, originalNumber, stateTag, stateBody);
   await setLabels(hubApi, hub, originalNumber, [], ['ready-for-review', 'approved-for-production']);
   const message = `Reassessment request [#${issue.number}](${issue.html_url}) was opened or updated. Advisory readiness and approval labels were cleared. This does not approve the change or create a new plan; governance must verify scope and rerun \`/publish\` on this original request after updating it.`;
   await upsertComment(hubApi, hub, originalNumber, reassessmentTag, message);

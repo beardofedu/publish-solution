@@ -46,10 +46,19 @@ test('handoff exception lookup includes only records linked to this original req
 test('reassessment invalidation only clears a linked publication issue in the hub', async () => {
   const labels = new Set(['ready-for-review', 'approved-for-production', 'publication-request']);
   const comments = [];
+  const stateComment = {
+    id: 2,
+    user: { login: 'github-actions[bot]' },
+    body: '<!-- publish-solution:state -->\n<!-- state-json:{"repository":"example/solution","basis":"fixture","parent":24} -->\n## Publication plan',
+  };
   const api = {
     request: async (method, path, data) => {
       if (method === 'GET' && path.endsWith('/issues/23')) {
         return { number: 23, labels: [...labels].map(name => ({ name })) };
+      }
+      if (method === 'PATCH' && path.endsWith('/issues/comments/2')) {
+        stateComment.body = data.body;
+        return stateComment;
       }
       if (path.endsWith('/issues/23/labels')) {
         data.labels.forEach(label => labels.add(label));
@@ -66,10 +75,7 @@ test('reassessment invalidation only clears a linked publication issue in the hu
       }
       throw new Error(`Unexpected request ${method} ${path}`);
     },
-    pages: async path => path.endsWith('/issues/23/comments') ? [{
-      user: { login: 'github-actions[bot]' },
-      body: '<!-- publish-solution:state -->\n<!-- state-json:{"repository":"example/solution","basis":"fixture","parent":24} -->',
-    }] : [],
+    pages: async path => path.endsWith('/issues/23/comments') ? [stateComment] : [],
   };
   const issue = {
     number: 30,
@@ -82,6 +88,11 @@ test('reassessment invalidation only clears a linked publication issue in the hu
   assert(!labels.has('ready-for-review'));
   assert(!labels.has('approved-for-production'));
   assert(comments.some(body => body.includes('Reassessment request [#30]')));
+  const savedState = JSON.parse(stateComment.body.match(/<!-- state-json:({[^\n]+}) -->/)[1]);
+  assert.equal(savedState.repository, 'example/solution');
+  assert.equal(savedState.parent, 24);
+  assert.equal(savedState.reassessmentInvalidated, true);
+  assert.equal(savedState.reassessmentIssue, 30);
   await assert.rejects(invalidateForReassessment({
     hubApi: api, hub, issue: { ...issue, body: issue.body.replace('/issues/23', '/issues/999') },
   }), /Unexpected request/);
