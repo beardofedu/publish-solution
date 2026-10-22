@@ -1,0 +1,79 @@
+name: Request control exception
+description: Request a time-limited waiver for governance review; never an automatic validation bypass.
+title: "[Control exception]: "
+labels: [control-exception]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, personal data, customer names, sensitive findings, or restricted reports.
+        Governance must explicitly approve or reject this request and arrange expiry review.
+        Filing or closing this issue does not waive a control, change a tier, close generated issues, or make a failed/unknown check pass.
+        Read https://beardofedu.github.io/publish-solution/requests.html#exceptions before submitting.
+  - type: input
+    id: original_request
+    attributes:
+      label: Original publication request
+      description: Link to the original governance request for this solution.
+    validations:
+      required: true
+  - type: input
+    id: repository
+    attributes:
+      label: Solution repository
+      description: Exact owner/name.
+      placeholder: contoso/team-helper
+    validations:
+      required: true
+  - type: input
+    id: control_id
+    attributes:
+      label: Control ID
+      description: Exact catalog id, for example secret-safety or delivery. Use one request per control.
+    validations:
+      required: true
+  - type: input
+    id: control_issue
+    attributes:
+      label: Generated control issue
+      description: Link to the affected control issue in the solution repository.
+    validations:
+      required: true
+  - type: textarea
+    id: justification
+    attributes:
+      label: Justification and residual risk
+      description: Explain why the control cannot be met, the affected scope, potential impact, and why a temporary exception is appropriate.
+    validations:
+      required: true
+  - type: textarea
+    id: compensating_controls
+    attributes:
+      label: Compensating controls and evidence
+      description: Describe mitigations, safe evidence links, monitoring, and the remediation plan. Do not copy restricted findings.
+    validations:
+      required: true
+  - type: input
+    id: expiry_date
+    attributes:
+      label: Expiry date
+      description: Requested expiry in YYYY-MM-DD format. Governance must verify it and assign a review before expiry.
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: input
+    id: risk_owner
+    attributes:
+      label: Risk owner
+      description: Team alias of the accountable risk-accepting authority. The requester cannot assume this authority's consent.
+    validations:
+      required: true
+  - type: checkboxes
+    id: attestations
+    attributes:
+      label: Requester attestations
+      options:
+        - label: I have not included secrets or sensitive data and understand this exception requires an explicit governance decision.
+          required: true
+        - label: I understand the stock validation gate does not bypass FAIL or UNKNOWN checks for a waiver and that renewal requires a new review.
+          required: true

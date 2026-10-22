@@ -24,6 +24,10 @@ rules:
 
 Intake keys/choices live in `scripts/model.mjs` and the issue form. Change them together and update tests, guides, and rules. Invalid or missing intake values fail rather than defaulting to a lower risk.
 
+The publication form's solution description, go-live date, target environment, and attestations are deliberately **not** intake keys. They stay in the source issue as human-review metadata, do not affect the tier or fingerprint, and are not copied to generated issues. Form UI requirements do not enforce API submissions or subsequent edits; governance checks completeness and calendar dates manually. Do not treat dev/test as an automatic lower-risk exemption.
+
+The three lifecycle forms (`request-reassessment.yml`, `request-control-exception.yml`, `request-decommission.yml`) use distinct manual labels. They are excluded from the publication workflows and daily sweep. Reassessment is mediated by governance updating the original publication request and rerunning `/publish` there: stable markers reuse existing issues and create only missing applicable controls, while changed scope reopens required existing controls for new evidence. Do not add `publication-request` to lifecycle forms or invent a second marker namespace for the same plan. Exceptions do not bypass checks, and decommissioning is not automated. See `docs/requests.html` and SETUP.md for the human review process.
+
 ## Control schema
 
 Add one YAML file per control in `controls/`:

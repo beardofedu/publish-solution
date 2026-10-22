@@ -11,9 +11,26 @@ Create these labels before using the form:
 ```sh
 gh label create publication-request --repo YOUR-ORG/YOUR-HUB --color 0969da
 gh label create approved-for-production --repo YOUR-ORG/YOUR-HUB --color 1a7f37
+gh label create reassessment-request --repo YOUR-ORG/YOUR-HUB --color 8250df
+gh label create control-exception --repo YOUR-ORG/YOUR-HUB --color bf8700
+gh label create decommission-request --repo YOUR-ORG/YOUR-HUB --color 57606a
 ```
 
 Risk and readiness labels are created by the toolkit. Existing labels are preserved. Non-collaborators may submit a form, but only hub collaborators with `write`, `maintain`, or `admin` permission may start cross-repository processing. An automatic run from a non-collaborator will fail preflight; a maintainer should review the request and comment `/publish`.
+
+Keep existing labels when upgrading; create only the three missing lifecycle labels. Assign governance triage for `reassessment-request`, `control-exception`, and `decommission-request`. These are **manual** forms and must not also have `publication-request`: automation on a separate request number would create a separate publication plan. No App/PAT permission, secret, variable, or environment names change.
+
+The publication form now also requires a solution description (purpose and AI behavior), requested go-live date (`YYYY-MM-DD`), target environment (`dev`, `test`, `prod`), and three attestations. These are recorded **only in the source issue**, not parsed, copied into generated issues, used in tiering, or included in the plan fingerprint. Existing structured intake/risk fields and choices remain unchanged, and legacy requests remain compatible. Maintainers must check the metadata, real calendar date, and attestations before processing and approval: GitHub's form UI requirements do not validate later edits or direct API submissions. Dev/test never lowers the tier; a requested deadline never overrides review.
+
+### Lifecycle review process
+
+| Form / label | Governance action |
+| --- | --- |
+| Change or re-assessment / `reassessment-request` | Verify and cross-link the original request and same target repository; remove its readiness/approval while review is pending. Reopen the original if needed, update its structured risk answers and record the change, then comment `/publish` **on the original**. Automation re-tiers, reuses existing parent/controls, and creates only missing applicable controls; changed scope reopens required existing controls for fresh evidence. Complete controls, `/validate`, and obtain fresh human approval; record the result in the reassessment issue. A different target requires a new publication request. |
+| Control exception / `control-exception` | Verify the catalog control ID, affected issue, justification, compensating controls/evidence, real expiry date, and risk owner's authority. Assign a reviewer, record explicit approval/rejection and conditions, link the decision to the original/control issue, and arrange expiry review in your approved tracking system. No automatic waiver, reminders, renewal, closure of controls, or FAIL/UNKNOWN bypass occurs. |
+| Decommission / `decommission-request` | Obtain business/technical/data/platform/governance decisions before destructive actions; verify communications, resource/access retirement, credential revocation, billing, retention/legal holds, and disposal evidence. Operators execute the approved work manually. Remove original readiness/approval, record retirement, and close the original to stop scheduled validation, preserving audit history. |
+
+Opening a manual lifecycle form does not automatically clear original labels or change cloud resources. Do not run `/publish` or `/validate` on these forms. Closing one does not itself approve a change, accept risk, or verify retirement. Follow the full [rendered lifecycle runbooks](https://beardofedu.github.io/publish-solution/requests.html); update that URL in your own instance.
 
 ## 2. Choose target authentication
 

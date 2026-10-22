@@ -162,6 +162,7 @@ test('native sub-issue errors have visible checklist fallback; server errors sto
 test('risk change invalidates prior state and reopens required work', async () => {
   const f = await fixture();
   await intakeRequest(f.args);
+  const originalNumbers = f.controls.map(issue => issue.number);
   f.controls.forEach(issue => { issue.state = 'closed'; issue.state_reason = 'completed'; });
   f.labels.add('ready-for-review');
   f.labels.add('approved-for-production');
@@ -169,11 +170,18 @@ test('risk change invalidates prior state and reopens required work', async () =
   await assert.rejects(validateRequest(f.args), /changed/);
   await intakeRequest(f.args);
   assert.equal(f.controls.length, 15);
+  assert.deepEqual(f.controls.slice(0, 12).map(issue => issue.number), originalNumbers);
+  const newIssues = f.controls.slice(12);
+  for (const id of ['ai-safety', 'resilience', 'security-review']) {
+    assert(newIssues.some(issue => issue.body.includes(marker(hub, 1, id))));
+  }
   assert(f.controls.every(issue => issue.state === 'open'));
   assert(!f.labels.has('ready-for-review'));
   assert(!f.labels.has('approved-for-production'));
   assert(f.labels.has('risk:high'));
   assert(!f.labels.has('risk:low'));
+  await intakeRequest(f.args);
+  assert.equal(f.controls.length, 15);
 });
 
 test('empty allowlist blocks writes and a request cannot be rebound to another target', async () => {

@@ -1,0 +1,72 @@
+name: Request decommission
+description: Coordinate safe retirement of an application, its access, resources, and data.
+title: "[Decommission]: "
+labels: [decommission-request]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, personal data, customer names, resource credentials, or sensitive architecture.
+        This request is manually reviewed. It does not delete resources, revoke credentials, archive repositories, or stop workflows automatically.
+        Keep the audit trail and follow approved retention and legal-hold policies.
+        Read https://beardofedu.github.io/publish-solution/requests.html#decommission before submitting.
+  - type: input
+    id: original_request
+    attributes:
+      label: Original publication request
+      description: Link to the original governance request; if none exists, state that and explain why.
+    validations:
+      required: true
+  - type: input
+    id: repository
+    attributes:
+      label: Solution repository
+      description: Exact owner/name.
+      placeholder: contoso/team-helper
+    validations:
+      required: true
+  - type: input
+    id: accountable_owner
+    attributes:
+      label: Accountable retirement owner
+      description: Team alias coordinating business, technical, data-owner, and governance approvals.
+    validations:
+      required: true
+  - type: input
+    id: retirement_date
+    attributes:
+      label: Target retirement date
+      description: Requested date in YYYY-MM-DD format; agree any notice or migration period with users.
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: textarea
+    id: reason_impact
+    attributes:
+      label: Reason and user impact
+      description: Explain why the application is retiring, affected users, communication, replacement or migration, and rollback needs.
+    validations:
+      required: true
+  - type: textarea
+    id: retirement_plan
+    attributes:
+      label: Resource and access retirement plan
+      description: Describe owners and safe evidence references for cloud resources, deployments, identities, federation, credentials, integrations, DNS, monitoring, and billing. Never paste credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: data_plan
+    attributes:
+      label: Data retention and disposal plan
+      description: Include exports/migration, backups, retention, legal holds, deletion verification, and data-owner approval. No real data.
+    validations:
+      required: true
+  - type: checkboxes
+    id: attestations
+    attributes:
+      label: Requester attestations
+      options:
+        - label: I have not included secrets or sensitive data and will obtain the required owner and governance decisions before destructive actions.
+          required: true
+        - label: I will record retirement evidence, preserve required audit history, and confirm retention and legal-hold requirements with the data owner.
+          required: true
