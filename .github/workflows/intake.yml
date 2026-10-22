@@ -11,6 +11,32 @@ concurrency:
   group: publish-solution-mutations
   cancel-in-progress: false
 jobs:
+  invalidate-reassessment:
+    if: >-
+      github.event_name == 'issues' &&
+      !github.event.issue.pull_request &&
+      contains(github.event.issue.labels.*.name, 'reassessment-request') &&
+      contains(fromJSON('["opened","edited","reopened"]'), github.event.action)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Authorize governance collaborator
+        run: node scripts/preflight.mjs
+        env:
+          HUB_TOKEN: ${{ github.token }}
+      - name: Invalidate original request's advisory decision
+        run: node scripts/lifecycle.mjs invalidate
+        env:
+          HUB_TOKEN: ${{ github.token }}
   intake:
     if: >-
       !github.event.issue.pull_request &&
@@ -32,6 +58,13 @@ jobs:
         run: node scripts/preflight.mjs
         env:
           HUB_TOKEN: ${{ github.token }}
+      - name: Require an explicit App repository list
+        run: node scripts/guard-app-scope.mjs
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SOLUTION_APP_ID: ${{ vars.SOLUTION_APP_ID }}
+          SOLUTION_APP_OWNER: ${{ vars.SOLUTION_APP_OWNER }}
+          SOLUTION_APP_REPOSITORIES: ${{ vars.SOLUTION_APP_REPOSITORIES }}
       - name: Create installation token (recommended)
         if: vars.SOLUTION_APP_ID != ''
         id: app

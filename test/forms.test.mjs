@@ -150,8 +150,18 @@ test('workflows remain gated to publication requests; labels and runbooks cover 
     const workflow = await readYaml(`.github/workflows/${file}.yml`);
     const job = workflow.jobs[file];
     assert(job.if.includes("contains(github.event.issue.labels.*.name, 'publication-request')"));
+    const steps = job.steps;
+    const scopeGuard = steps.findIndex(step => step.run === 'node scripts/guard-app-scope.mjs');
+    const tokenCreation = steps.findIndex(step => step.uses?.includes('actions/create-github-app-token'));
+    assert(scopeGuard >= 0 && scopeGuard < tokenCreation, `${file}: app scope must be checked before token creation`);
     for (const label of ['reassessment-request', 'control-exception', 'decommission-request']) {
       assert(!job.if.includes(label));
+    }
+    if (file === 'intake') {
+      const lifecycle = workflow.jobs['invalidate-reassessment'];
+      assert(lifecycle.if.includes("contains(github.event.issue.labels.*.name, 'reassessment-request')"));
+      assert(lifecycle.steps.some(step => step.run === 'node scripts/preflight.mjs'));
+      assert(lifecycle.steps.some(step => step.run === 'node scripts/lifecycle.mjs invalidate'));
     }
   }
   const runner = await readFile('scripts/run.mjs', 'utf8');

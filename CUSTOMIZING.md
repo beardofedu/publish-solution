@@ -50,7 +50,11 @@ IDs must be unique lowercase kebab-case and cannot be `parent`. The optional `wh
 
 Add a matching rendered guide anchor. `npm run check` checks catalog integrity, YAML, and relative HTML links/anchors. Run `npm test` after any policy/logic change.
 
-The state basis hashes the normalized intake, derived tier, and applicable control definitions. A changed basis requires `/publish`, reopens required existing issues, posts refreshed criteria, and clears readiness/approval. Removing a control preserves old issues for audit but removes it from the current required plan. Renaming an ID creates a new control issue; do not reuse IDs for unrelated requirements.
+Every control ID must also have exactly one entry in `config/work-packages.yml`. It names one lead role (`citizen`, `platform`, `security`, or `data`), supporting roles, prerequisite control IDs, an evidence checklist, and acceptable/insufficient evidence examples. Keep dependencies acyclic and limited to useful prerequisites; they remain within the existing control issues rather than creating one issue per checklist bullet. `npm run check`/`npm test` reject missing IDs, invalid roles, unknown dependencies, or cycles. Generated issue links connect prerequisites to the stable existing issue IDs.
+
+The state basis hashes normalized intake, derived tier, applicable control definitions, and their work-package definitions. A changed basis requires `/publish`, reopens required existing issues, posts refreshed criteria, and clears readiness/approval. Removing a control preserves old issues for audit but removes it from the current required plan. Renaming an ID creates a new control issue; do not reuse IDs for unrelated requirements.
+
+Validation produces a time-stamped handoff package bound to the current default-branch commit. It lists control issue/evidence locations and automated checks, then leaves human governance decision and separate platform acceptance explicitly pending. Request edits and authorized reassessment events invalidate the old package; an expired/missing exception date is visible but never changes FAIL/UNKNOWN or grants a waiver. Do not customize these records to synthesize a successful review.
 
 ## Automated checks and exceptions
 

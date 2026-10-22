@@ -76,11 +76,11 @@ async function fixture(options = {}) {
       return structuredClone(existing);
     }
     if (path.startsWith(`/repos/${target}/issues/`) && path.endsWith('/comments')) return {};
-    if (path === `/repos/${target}/branches/main`) return { commit: { sha: 'abc123' } };
+    if (path === `/repos/${target}/branches/main`) return { commit: { sha: options.commitSha ?? 'abc123' } };
     if (options.checksPass) {
       if (path.endsWith('/vulnerability-alerts')) return null;
       if (path.includes('/code-scanning/analyses')) {
-        return [{ commit_sha: 'abc123', error: '', results_count: 0, created_at: new Date().toISOString() }];
+        return [{ commit_sha: options.commitSha ?? 'abc123', error: '', results_count: 0, created_at: new Date().toISOString() }];
       }
       if (path.includes('/branches/main/protection')) {
         return { required_pull_request_reviews: { required_approving_review_count: 1 } };
@@ -105,6 +105,7 @@ async function fixture(options = {}) {
     request,
     pages: async path => {
       if (path === `/repos/${hub}/issues/1/comments`) return structuredClone(comments);
+      if (path === `/repos/${hub}/issues?state=all&labels=control-exception`) return [];
       if (path === `/repos/${target}/issues?state=all`) return structuredClone(controls);
       if (path.endsWith('/sub_issues')) {
         if (options.subIssuesStatus) throw Object.assign(new Error('sub-issues unavailable'), { status: options.subIssuesStatus });
@@ -126,9 +127,17 @@ test('intake creates one parent and required children; reruns do not duplicate o
   assert.equal(first.plans.length, 11);
   assert.equal(f.controls.length, 12);
   assert.equal(f.links.size, 11);
+  const identity = f.controls.find(issue => issue.body.includes(marker(hub, 1, 'identity')));
+  assert(identity.body.includes('**Lead:** platform'));
+  assert(identity.body.includes('Complete [**ownership**]('));
+  assert(identity.body.includes('### Examples a reviewer can assess'));
+  assert(identity.body.includes('A login screen'));
   const child = f.controls.find(issue => issue.body.includes(marker(hub, 1, 'ownership')));
   child.state = 'closed';
   child.state_reason = 'completed';
+  const operations = f.controls.find(issue => issue.body.includes(marker(hub, 1, 'operations')));
+  const runtime = f.controls.find(issue => issue.body.includes(marker(hub, 1, 'runtime')));
+  assert(operations.body.includes(`Complete [**runtime**](${runtime.html_url}) first`));
   await intakeRequest(f.args);
   assert.equal(f.controls.length, 12);
   assert.equal(child.state, 'closed');
@@ -217,15 +226,37 @@ test('completed controls and confirmed checks grant readiness but never producti
     issue.state = 'closed';
     issue.state_reason = 'completed';
   });
+  f.labels.add('approved-for-production');
   const report = await validateRequest(f.args);
   assert.equal(report.ready, true, report.body);
   assert(f.labels.has('ready-for-review'));
   assert(!f.labels.has('approved-for-production'));
   assert(f.controls[0].body.includes('Ready for governance review'));
   assert(f.comments.some(comment => comment.body.includes('Ready for governance review')));
+  assert(f.comments.some(comment => comment.body.includes('Handoff package — prepared for human review')));
+  assert(f.comments.some(comment => comment.body.includes('No linked exception requests found')));
+  assert(f.comments.some(comment => comment.body.includes('Platform acceptance — separate')));
+  f.labels.add('approved-for-production');
+  await validateRequest(f.args);
+  assert(f.labels.has('approved-for-production'), 'an unchanged commit preserves an explicit human decision');
   f.source.state = 'closed';
   await assert.rejects(validateRequest(f.args), /changed or closed/);
   assert(!f.labels.has('ready-for-review'));
+});
+
+test('a changed default-branch commit invalidates the prior approval even if checks pass', async () => {
+  const f = await fixture({ checksPass: true });
+  await intakeRequest(f.args);
+  f.controls.filter(issue => !issue.body.includes(marker(hub, 1, 'parent'))).forEach(issue => {
+    issue.state = 'closed';
+    issue.state_reason = 'completed';
+  });
+  await validateRequest(f.args);
+  f.labels.add('approved-for-production');
+  f.options.commitSha = 'def456';
+  const report = await validateRequest(f.args);
+  assert.equal(report.ready, true, report.body);
+  assert(!f.labels.has('approved-for-production'));
 });
 
 test('untrusted state comments cannot replace the hub bot audit record', async () => {
@@ -245,6 +276,18 @@ test('catalog changes require republishing even if all old issues are complete',
   await intakeRequest(f.args);
   f.args.config.catalog[0].acceptance.push('New owner sign-off');
   await assert.rejects(validateRequest(f.args), /changed/);
+});
+
+test('work-package changes require republishing and fresh evidence', async () => {
+  const f = await fixture();
+  await intakeRequest(f.args);
+  f.controls.forEach(issue => { issue.state = 'closed'; issue.state_reason = 'completed'; });
+  f.args.config.workPackages.ownership.evidence_template.push('New data-owner decision');
+  await assert.rejects(validateRequest(f.args), /changed/);
+  await intakeRequest(f.args);
+  assert(f.controls.find(issue => issue.body.includes(marker(hub, 1, 'ownership'))).state === 'open');
+  assert(f.requests.some(request => request.method === 'POST' && request.path.endsWith('/comments') &&
+    request.data.body.includes('New data-owner decision')));
 });
 
 test('hub permissions and canonical repository isolation are enforced', async () => {

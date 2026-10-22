@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { GitHub, upsertComment } from './github.mjs';
 import { loadConfig, repositoryPattern } from './model.mjs';
 import { authorize, clearGate, intakeRequest, reportTag, validateRequest } from './publish.mjs';
+import { remindExceptions } from './lifecycle.mjs';
 
 async function main() {
   const mode = process.argv[2];
@@ -53,6 +54,10 @@ async function main() {
         `## Publication blocked\n\n${error.message}\n\nRead SETUP.md for permissions and feature prerequisites. No production approval was granted.`);
       console.error(`Request #${issue.number}: ${error.message}`);
     }
+  }
+  if (mode === 'sweep') {
+    const updated = await remindExceptions(hubApi, hub);
+    console.log(`Updated ${updated} due, expired, or incomplete exception reminder(s).`);
   }
   if (failed) process.exitCode = 1;
 }

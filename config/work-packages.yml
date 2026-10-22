@@ -1,0 +1,210 @@
+ownership:
+  owner_role: citizen
+  supporting_roles: [platform, data]
+  depends_on: []
+  evidence_template:
+    - README or inventory link with business and technical team aliases
+    - Data-flow and classification decision confirmed by the data owner
+    - Support contact and stated production scope
+  evidence_examples:
+    acceptable:
+      - Reviewed README naming accountable team aliases and linking an approved data-flow record.
+      - Data-owner comment confirming classification and identified unknowns.
+    insufficient:
+      - “The author owns it” with no support or successor plan.
+      - A diagram with no owner, classification decision, or production scope.
+repository-hygiene:
+  owner_role: citizen
+  supporting_roles: [platform, security]
+  depends_on: [ownership]
+  evidence_template:
+    - Clean-clone build and test commands with observed result
+    - CODEOWNERS, SECURITY.md, dependency lockfile, and branch-review links
+    - Maintainer confirmation that named teams and license are valid
+  evidence_examples:
+    acceptable:
+      - CI result for the reviewed commit plus substantive README, CODEOWNERS, and SECURITY.md links.
+      - Branch protection or ruleset evidence showing required review on the default branch.
+    insufficient:
+      - A README that only describes the prototype or says “works locally.”
+      - CODEOWNERS naming a nonexistent team or no enforced review evidence.
+secret-safety:
+  owner_role: security
+  supporting_roles: [citizen, platform]
+  depends_on: [repository-hygiene]
+  evidence_template:
+    - Secret-scanning and push-protection settings status
+    - Approved current-files and Git-history scan summary, with findings redacted
+    - Rotation/incident record reference for any discovered credential
+  evidence_examples:
+    acceptable:
+      - Dated approved scan summary describing scope and remediation without exposing values.
+      - Security owner confirmation that discovered credentials were revoked and rotated.
+    insufficient:
+      - “No secrets found” based only on filenames or visual review.
+      - A comment or prompt containing a credential or raw alert value.
+supply-chain:
+  owner_role: security
+  supporting_roles: [citizen, platform]
+  depends_on: [repository-hygiene]
+  evidence_template:
+    - Dependency inventory and ecosystem coverage
+    - Alert triage and dependency-update/review configuration
+    - License/provenance decisions or named exceptions with expiry
+  evidence_examples:
+    acceptable:
+      - Dated dependency report with owner-attributed alert dispositions.
+      - CI evidence for update automation and pull-request dependency review.
+    insufficient:
+      - A lockfile alone or a statement that package installation succeeded.
+      - An alert count without owner, triage, or disposition.
+code-scanning:
+  owner_role: security
+  supporting_roles: [citizen, platform]
+  depends_on: [repository-hygiene]
+  evidence_template:
+    - Successful scan URL and analyzed default-branch commit
+    - Finding triage and disposition, including risk owner and review date
+    - Human review link for security-sensitive paths and negative tests
+  evidence_examples:
+    acceptable:
+      - Successful analysis at the current default-branch SHA with linked finding dispositions.
+      - Security review and tests covering identified trust boundaries.
+    insufficient:
+      - A green scan from an older commit or one that omits the application language.
+      - “No findings” treated as proof that the application is secure.
+identity:
+  owner_role: platform
+  supporting_roles: [citizen, security]
+  depends_on: [ownership]
+  evidence_template:
+    - Identity-provider and user-access policy reference
+    - Server-side authorization design and least-privilege integration scope
+    - Positive and negative authorization test results
+  evidence_examples:
+    acceptable:
+      - Platform-reviewed identity configuration and tests denying cross-user requests.
+      - Scoped integration permission record with owner and review date.
+    insufficient:
+      - A login screen, hidden button, or internal URL presented as authorization.
+      - A role list without proof sensitive operations enforce it.
+secrets-management:
+  owner_role: platform
+  supporting_roles: [security, citizen]
+  depends_on: [identity]
+  evidence_template:
+    - Production identity and vault/access-policy reference
+    - Secret rotation, recovery, and audit ownership
+    - Safe inspection of browser bundles, logs, and build artifacts
+  evidence_examples:
+    acceptable:
+      - Platform confirmation of managed identity and least-privilege vault scope.
+      - Rotation/recovery exercise record tied to a reviewed commit.
+    insufficient:
+      - A secret or credential copied into an issue, repository, or browser bundle.
+      - “Uses a vault” without identity, scope, access review, or rotation owner.
+data-protection:
+  owner_role: data
+  supporting_roles: [citizen, security, platform]
+  depends_on: [ownership]
+  evidence_template:
+    - Approved data-flow, purpose, region, and retention record
+    - Access, encryption, logging, and deletion verification
+    - Applicable privacy or regulatory review decision
+  evidence_examples:
+    acceptable:
+      - Data-owner-approved flow and retention references with scope and review date.
+      - Reviewer disposition and tests showing sensitive payloads are omitted from logs.
+    insufficient:
+      - A generic encryption claim without flows, access, or retention.
+      - Real personal or regulated data pasted into GitHub as evidence.
+ai-safety:
+  owner_role: security
+  supporting_roles: [citizen, platform, data]
+  depends_on: [identity, data-protection]
+  evidence_template:
+    - Approved model, provider terms, and data-boundary decision
+    - Prompt-injection, output-validation, and tool-authorization test results
+    - Rate/cost limits and monitoring owner
+  evidence_examples:
+    acceptable:
+      - Tests proving model output cannot grant tool permissions, plus owner approvals.
+      - Redacted abuse-test results and documented provider/data-retention settings.
+    insufficient:
+      - A system prompt claiming the model will ignore malicious input.
+      - A demo with no output validation, authorization tests, or cost limits.
+delivery:
+  owner_role: platform
+  supporting_roles: [citizen, security]
+  depends_on: [repository-hygiene, identity, secrets-management]
+  evidence_template:
+    - Reviewed workflow and reproducible artifact/build evidence
+    - Protected environment and reviewer/bypass configuration
+    - Cloud trust scope, rollback procedure, and non-production exercise
+  evidence_examples:
+    acceptable:
+      - Reviewed workflow and environment record plus cloud-owner verification of OIDC trust.
+      - Non-production rollback drill with owner and timestamp.
+    insufficient:
+      - YAML pattern or issue label treated as proof of cloud trust or release approval.
+      - Deployment from an unreviewed branch or with an unscoped long-lived credential.
+runtime:
+  owner_role: platform
+  supporting_roles: [security, citizen]
+  depends_on: [delivery, identity]
+  evidence_template:
+    - Live environment/network test from intended and unintended locations
+    - HTTPS, patching, logging, health, alert, and incident-response evidence
+    - Cloud owner confirmation of the applicable baseline
+  evidence_examples:
+    acceptable:
+      - Dated platform test record for the named environment and deployment.
+      - Alert exercise showing owner receipt and a completed investigation path.
+    insufficient:
+      - Repository configuration presented as proof of live network isolation.
+      - Logs or screenshots containing secrets or sensitive payloads.
+operations:
+  owner_role: platform
+  supporting_roles: [citizen, security, data]
+  depends_on: [ownership, runtime]
+  evidence_template:
+    - Accepted support/on-call owner and escalation route
+    - Exercised recovery and incident procedures proportionate to risk
+    - Retirement and cost-ownership plan
+  evidence_examples:
+    acceptable:
+      - Runbook with team aliases and dated recovery/incident exercise.
+      - Business and platform confirmation of cost and retirement responsibilities.
+    insufficient:
+      - Runbook naming only the prototype author.
+      - Backup plan with no restore test or owner.
+resilience:
+  owner_role: platform
+  supporting_roles: [citizen, security]
+  depends_on: [operations]
+  evidence_template:
+    - Approved recovery objectives and load/capacity thresholds
+    - Restore/rebuild and dependency-outage exercise result
+    - Quota/budget alerts and acknowledged residual availability risk
+  evidence_examples:
+    acceptable:
+      - Measured non-production exercise against owner-approved objectives.
+      - Alert delivery test and business-owner acknowledgment of residual risk.
+    insufficient:
+      - “Highly available” with no measured recovery or capacity evidence.
+      - Budget notification represented as a hard spending cap without proof.
+security-review:
+  owner_role: security
+  supporting_roles: [data, platform, citizen]
+  depends_on: [data-protection, identity, delivery]
+  evidence_template:
+    - Independent threat-model and assessment record
+    - Privacy/compliance disposition for applicable obligations
+    - Risk authority, decision, conditions, and review date
+  evidence_examples:
+    acceptable:
+      - Independent reviewer decision linked to the reviewed commit and scope.
+      - Risk acceptance naming authorized owner, mitigation, expiry, and conditions.
+    insufficient:
+      - Self-attestation or AI-generated analysis presented as independent sign-off.
+      - Approval label or closed issue without reviewer identity and decision.

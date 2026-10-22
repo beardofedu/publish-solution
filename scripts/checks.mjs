@@ -130,10 +130,20 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
     }
     return fail('No Azure OIDC workflow pattern found. Non-Azure deployments need an approved equivalent and manual governance review.');
   });
-  return checks;
+  await check('Default-branch validation basis', async () => {
+    const latestMetadata = await api.request('GET', root);
+    if (latestMetadata.default_branch !== branch) {
+      return fail(`Default branch changed during validation (${branch} to ${latestMetadata.default_branch}); rerun validation.`);
+    }
+    const latest = await api.request('GET', `${root}/branches/${encodeURIComponent(branch)}`);
+    return latest.commit.sha === sha
+      ? pass(`All automated checks used the current default-branch commit ${sha}.`)
+      : fail(`Default branch changed during validation (${sha} to ${latest.commit.sha}); rerun validation.`);
+  });
+  return { checks, commitSha: sha };
 }
 
-export function validationReport(plans, checks) {
+export function validationReport(plans, checks, handoff = '') {
   const incomplete = plans.filter(plan => !plan.existing || plan.existing.state !== 'closed' ||
     plan.existing.state_reason !== 'completed');
   const ready = plans.length > 0 && checks.length > 0 && incomplete.length === 0 &&
@@ -152,6 +162,7 @@ export function validationReport(plans, checks) {
     'UNKNOWN is a blocking gap, not a pass. Closing an issue as not planned or duplicate does not satisfy the gate.',
     'These are configuration signals, not a security audit or compliance certification. They do not verify cloud state, resolved alerts, or evidence quality.',
     'A governance reviewer must inspect evidence and apply approved-for-production. The automation never grants production approval.',
+    ...(handoff ? ['', handoff] : []),
   ];
   return { ready, body: lines.join('\n') };
 }
