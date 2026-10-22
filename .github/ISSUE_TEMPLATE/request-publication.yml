@@ -1,0 +1,76 @@
+name: Request publication
+description: Create a risk-tiered path to production in your solution repository.
+title: "[Publication]: "
+labels: [publication-request]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste secrets, personal information, customer names, or sensitive architecture here.
+        This is a public repository. Use team aliases for owners. For confidential work, deploy this toolkit in a private governance repository.
+        A maintainer must allowlist your target repository and authorize processing.
+  - type: input
+    id: repository
+    attributes:
+      label: Solution repository
+      description: Exact owner/name, not a URL. It must be on the governance allowlist.
+      placeholder: contoso/team-helper
+    validations:
+      required: true
+  - type: input
+    id: business
+    attributes:
+      label: Business owner
+      description: Team alias accountable for business use and data decisions.
+    validations:
+      required: true
+  - type: input
+    id: technical
+    attributes:
+      label: Technical owner
+      description: Team alias accountable for maintenance and incidents.
+    validations:
+      required: true
+  - type: dropdown
+    id: data
+    attributes:
+      label: Data classification
+      options: [Public, Internal, Confidential, PII, PHI, PCI, Regulated]
+    validations:
+      required: true
+  - type: dropdown
+    id: exposure
+    attributes:
+      label: Exposure
+      options: [Internal, External]
+    validations:
+      required: true
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Audience size
+      options: [Small team, Organization-wide, Public]
+    validations:
+      required: true
+  - type: dropdown
+    id: ai
+    attributes:
+      label: AI or LLM usage at runtime
+      description: Select Yes if the deployed solution calls a model, not merely because AI helped write code.
+      options: [No, Yes]
+    validations:
+      required: true
+  - type: dropdown
+    id: integrations
+    attributes:
+      label: Integrations
+      options: [None or read-only, Business-system writes, Privileged]
+    validations:
+      required: true
+  - type: dropdown
+    id: hosting
+    attributes:
+      label: Target hosting
+      options: [Azure, Other cloud, Undecided]
+    validations:
+      required: true

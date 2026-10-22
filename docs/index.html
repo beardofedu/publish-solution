@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical, human-reviewed path from AI-built prototype to secure cloud deployment.">
+  <title>Publish Solution | From prototype to production</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header><a class="brand" href="index.html">publish / solution</a><nav aria-label="Main navigation"><a href="index.html" aria-current="page">Start here</a><a href="controls.html">Control guide</a><a href="azure.html">Azure path</a><a href="governance.html">Governance</a><a href="setup.html">Set up the toolkit</a></nav></header>
+<main id="main">
+  <section class="hero">
+    <div class="eyebrow">Citizen developers + accountable governance</div>
+    <h1>It works on your machine.<br>Make it ready for everyone.</h1>
+    <p class="lead">Turn an AI-built prototype into a cloud-ready solution with a risk-tiered plan, actionable GitHub issues, and a human production review. Keep the creativity. Add the guardrails.</p>
+    <div class="actions"><a class="button" href="https://github.com/beardofedu/publish-solution/issues/new?template=request-publication.yml">Request publication</a><a class="button secondary" href="controls.html">Explore the controls</a></div>
+  </section>
+  <aside class="notice"><strong>Public repository, public conversation.</strong> Do not submit secrets, personal data, customer names, or sensitive system details. Use team aliases. Organizations handling confidential information should run their own private governance copy.</aside>
+  <h2>Your path to publication</h2>
+  <div class="grid">
+    <section class="card"><div class="number">01 / DESCRIBE</div><h3>Tell us what you built</h3><p>Identify the solution repository, owners, data, audience, integrations, AI usage, and hosting. A maintainer allowlists the target and authorizes processing.</p></section>
+    <section class="card"><div class="number">02 / PREPARE</div><h3>Work the issues</h3><p>The toolkit creates one tracking issue and a set of control issues in your solution repository. Each explains why, what to do, evidence to collect, and how Copilot can help.</p></section>
+    <section class="card"><div class="number">03 / VALIDATE</div><h3>Show the evidence</h3><p>Close required controls as <em>completed</em>, with evidence. Ask a maintainer to comment <code>/validate</code> on the original request. Fix reported gaps.</p></section>
+    <section class="card"><div class="number">04 / REVIEW</div><h3>Get a human decision</h3><p>A clean automated report earns <code>ready-for-review</code>, not deployment permission. Governance reviews evidence and decides whether to apply <code>approved-for-production</code>.</p></section>
+  </div>
+  <h2>Risk changes the work, not the accountability</h2>
+  <div class="table-wrap"><table><caption>Default risk tiers; organizations can customize the rules</caption><thead><tr><th scope="col">Tier</th><th scope="col">Typical signals</th><th scope="col">What changes</th></tr></thead><tbody>
+    <tr><th scope="row">Low</th><td>Internal, public/internal data, small team, read-only integrations, no runtime AI.</td><td>Core controls across ownership, security, delivery, and operations.</td></tr>
+    <tr><th scope="row">Moderate</th><td>Confidential data, organization-wide/public audience, business-system writes, or runtime LLM APIs.</td><td>Add recovery/capacity exercises; runtime AI adds its own control.</td></tr>
+    <tr><th scope="row">High</th><td>External exposure, PII/PHI/PCI/regulated data, or privileged integrations.</td><td>Add independent security/privacy review and explicit residual-risk acceptance.</td></tr>
+  </tbody></table></div>
+  <p>The highest matching tier wins. “AI helped write the code” is different from “the deployed app calls an LLM.” Every tier still requires secure identity, secret handling, and a reviewed deployment path.</p>
+  <aside class="notice tip"><strong>Use Copilot as a collaborator, not an approver.</strong> Ask it to explain your code, propose configuration, and write tests. Never paste credentials or regulated data into a prompt. Review the output and verify live cloud settings with your platform team.</aside>
+  <h2>What this toolkit does not promise</h2>
+  <p>A checklist is not a penetration test, compliance certification, or automatic cloud deployment. Repository checks cannot prove your cloud identity, network, logging, or data protections are correct. Keep production environments protected independently of GitHub issue labels.</p>
+</main>
+<footer>Cloud-agnostic controls. Azure-focused examples. <a href="https://github.com/beardofedu/publish-solution">Source and MIT license</a>. No customer-specific data.</footer>
+</body></html>

@@ -1,0 +1,18 @@
+id: ai-safety
+title: Bound runtime AI behavior and protect model access
+tiers: [Low, Moderate, High]
+when:
+  ai: Yes
+guide: controls.html#ai-safety
+why: Runtime model calls introduce data disclosure, prompt injection, unreliable output, and unbounded cost risks beyond code generation.
+steps:
+  - Use approved model services and deployments; confirm provider retention and training terms with your organization.
+  - Keep LLM credentials server-side in a vault or use managed identity. Redact sensitive content from prompts and logs.
+  - Treat retrieved content and model output as untrusted; validate structured output and enforce tool authorization outside the model.
+  - Add prompt injection and data-exfiltration tests, token/cost limits, rate limiting, and human confirmation for consequential actions.
+acceptance:
+  - Approved models, data boundaries, and key handling are documented.
+  - Untrusted prompts cannot grant tools additional privileges or bypass user authorization.
+  - Output validation, abuse tests, monitoring, and spending limits are evidenced.
+prompts:
+  - Threat-model runtime model calls, retrieved content, and tool execution in this code. Propose prompt-injection tests and server-side enforcement independent of model instructions.

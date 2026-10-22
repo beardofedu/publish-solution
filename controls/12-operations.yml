@@ -1,0 +1,15 @@
+id: operations
+title: Prepare support, incident response, and retirement
+tiers: [Low, Moderate, High]
+guide: controls.html#operations
+why: Production ownership includes responding to failures and safely retiring the solution.
+steps:
+  - Define an incident contact, escalation route, alert ownership, and maintenance cadence.
+  - Define recovery expectations and backups where state exists; document why backups are unnecessary for stateless components.
+  - Create a decommission plan for identities, cloud resources, secrets, retained data, and integrations.
+acceptance:
+  - Support and incident contacts have accepted the handover.
+  - Recovery procedures are documented and exercised proportionately to risk.
+  - Retirement and ongoing cost ownership are documented.
+prompts:
+  - Draft an operations runbook with health checks, failure triage, recovery, credential rotation, and decommission steps. Mark organization-specific contacts and decisions as TODO.

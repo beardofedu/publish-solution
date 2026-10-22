@@ -1,0 +1,16 @@
+id: delivery
+title: Build a reviewed deployment pipeline
+tiers: [Low, Moderate, High]
+guide: controls.html#delivery
+why: A repeatable pipeline makes production changes reviewable, testable, and recoverable.
+steps:
+  - Add CI build and test workflows with least-privilege token permissions.
+  - Use infrastructure as code and separate development, staging, and production environments.
+  - Use GitHub Actions OIDC federation to Azure rather than long-lived client secrets. Verify the deployment job's effective issuer, audience, and subject, including immutable IDs or custom templates, before restricting cloud trust to the intended repository and protected environment.
+  - Protect production with required environment reviewers and deployment branch policies; restrict bypass and document rollback.
+acceptance:
+  - Build and tests pass on reviewed code and deployable artifacts are reproducible.
+  - An enabled deployment workflow uses OIDC and the cloud trust scope is independently reviewed.
+  - Production approvals and rollback have been exercised; GitHub labels alone cannot authorize deployment.
+prompts:
+  - Propose an Azure OIDC deployment workflow with minimum permissions, a protected production environment, and explicit placeholders for tenant, subscription, and client IDs. Do not add client secrets.

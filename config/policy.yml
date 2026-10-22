@@ -1,0 +1,8 @@
+# Keep this list narrow. An owner match alone is NOT enough: each target must
+# be explicitly listed before this privileged automation will write to it.
+allowed_repositories: []
+# Example: [contoso/expense-helper, contoso/team-dashboard]
+guide_url: https://beardofedu.github.io/publish-solution
+# These hub permissions may trigger /publish and /validate.
+requester_permissions: [admin, maintain, write]
+scan_max_age_days: 30

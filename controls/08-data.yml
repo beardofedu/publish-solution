@@ -1,0 +1,15 @@
+id: data-protection
+title: Protect data throughout its lifecycle
+tiers: [Low, Moderate, High]
+guide: controls.html#data-protection
+why: Cloud deployment changes who can access data and where it is stored, logged, and retained.
+steps:
+  - Minimize collected data and verify approved purposes, service regions, and data residency requirements.
+  - Enforce encryption in transit and at rest, access boundaries, retention, deletion, and safe logging.
+  - For regulated or personal data, get privacy/security review and record obligations without copying the data into GitHub.
+acceptance:
+  - Data flows, residency, retention, and deletion procedures are approved by the data owner.
+  - Logs and telemetry exclude sensitive payloads and secrets.
+  - Applicable privacy, contractual, and regulatory reviews are complete.
+prompts:
+  - Build a data-flow inventory from source code, including storage, external services, telemetry, and deletion paths. Flag unknown residency and retention decisions.

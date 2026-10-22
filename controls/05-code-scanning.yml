@@ -1,0 +1,15 @@
+id: code-scanning
+title: Scan and review AI-generated code
+tiers: [Low, Moderate, High]
+guide: controls.html#code-scanning
+why: Working code can still contain exploitable mistakes, especially at trust boundaries.
+steps:
+  - Enable CodeQL for supported languages, or an approved code scanning tool for unsupported languages.
+  - Review AI-generated code for authorization, injection, unsafe deserialization, error handling, and test gaps.
+  - Triage findings; evaluate Copilot Autofix suggestions where available, then review and test changes rather than auto-accepting them.
+acceptance:
+  - A successful code scanning analysis covers the current default-branch commit.
+  - Findings are resolved or explicitly accepted by the security owner.
+  - A human has reviewed security-sensitive code and recorded evidence.
+prompts:
+  - Trace untrusted inputs to sensitive operations and propose tests for authorization and injection boundaries. Explain uncertainty and do not equate a clean scan with safety.

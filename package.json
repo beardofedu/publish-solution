@@ -1,0 +1,15 @@
+{
+  "name": "publish-solution",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A human-reviewed path from AI-built prototype to cloud-ready solution.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check.mjs",
+    "intake": "node scripts/run.mjs intake",
+    "validate": "node scripts/run.mjs validate"
+  },
+  "dependencies": { "yaml": "2.9.1" }
+}

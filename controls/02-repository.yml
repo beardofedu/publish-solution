@@ -1,0 +1,16 @@
+id: repository-hygiene
+title: Make the repository maintainable
+tiers: [Low, Moderate, High]
+guide: controls.html#repository-hygiene
+why: Reproducible builds and clear ownership let others safely maintain an AI-built application.
+steps:
+  - Add a README with local setup, build, test, deployment, and support instructions.
+  - Add an appropriate .gitignore, an organization-approved license or proprietary notice, SECURITY.md, and CODEOWNERS.
+  - Commit dependency lockfiles and pin third-party Actions to reviewed full commit SHAs.
+  - Require pull requests and at least one approval on the default branch; prevent unreviewed bypass.
+acceptance:
+  - A colleague can build and test from a clean clone using the documented commands.
+  - CODEOWNERS names valid teams or maintainers, and SECURITY.md explains private reporting.
+  - Lockfiles, dependency policy, and default-branch review protection are in place.
+prompts:
+  - Review repository onboarding gaps and propose README, ignore rules, and ownership entries. Ask me to supply real owners and the approved license.

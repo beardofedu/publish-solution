@@ -1,0 +1,34 @@
+name: Publish solution
+description: Create or validate a risk-tiered publication plan across repositories.
+inputs:
+  mode:
+    description: intake, validate, or sweep (sweep requires schedule or workflow_dispatch)
+    required: true
+  hub-token:
+    description: Governance repository GITHUB_TOKEN with issues write and contents read
+    required: true
+  solution-token:
+    description: Selected-repository App installation token or fine-grained PAT
+    required: true
+  config-path:
+    description: Absolute path to a trusted checkout containing controls/ and config/
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      with:
+        node-version: '22'
+    - name: Install toolkit dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --ignore-scripts
+    - name: Process publication
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: node scripts/run.mjs "$PUBLICATION_MODE"
+      env:
+        PUBLICATION_MODE: ${{ inputs.mode }}
+        TOOLKIT_PATH: ${{ inputs.config-path }}
+        HUB_TOKEN: ${{ inputs.hub-token }}
+        SOLUTION_TOKEN: ${{ inputs.solution-token }}

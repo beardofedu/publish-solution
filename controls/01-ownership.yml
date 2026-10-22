@@ -1,0 +1,15 @@
+id: ownership
+title: Confirm ownership and classify the solution
+tiers: [Low, Moderate, High]
+guide: controls.html#ownership
+why: Someone must own the business outcome, the data, and the ongoing support after the prototype creator moves on.
+steps:
+  - Record business and technical team aliases, a support channel, and the intended audience in the README.
+  - Inventory data entering, leaving, and stored by the solution. Confirm its classification with the data owner.
+  - Document hosting, integrations, runtime AI use, and the intended production scope without including sensitive data.
+acceptance:
+  - Business and technical owners have accepted accountability.
+  - Data flow and classification are documented and confirmed.
+  - The intake answers accurately describe production use.
+prompts:
+  - Draft a solution ownership and data inventory template from this repository. Identify unknowns; do not invent owners or classifications.

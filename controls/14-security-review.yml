@@ -1,0 +1,15 @@
+id: security-review
+title: Obtain independent security and privacy sign-off
+tiers: [High]
+guide: controls.html#security-review
+why: External exposure, regulated data, and privileged integrations need specialist review beyond a self-service checklist.
+steps:
+  - Complete a threat model covering identities, data flows, trust boundaries, abuse cases, and third parties.
+  - Arrange an independent security assessment and privacy/compliance review appropriate to the actual risks.
+  - Record remediation, residual risks, exception owners and expiry, and explicit production sign-off.
+acceptance:
+  - Independent security and applicable privacy/compliance reviewers have signed off.
+  - Unresolved risk has a named accepting authority, mitigation, and review date.
+  - The governance reviewer has verified evidence rather than relying on issue closure.
+prompts:
+  - Draft a threat-model outline from the application and infrastructure code, including public entry points and privileged integrations. List missing evidence for a human security reviewer.

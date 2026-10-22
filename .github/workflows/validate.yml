@@ -1,0 +1,57 @@
+name: Validate publication readiness
+on:
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: publish-solution-mutations
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (!github.event.issue.pull_request &&
+      contains(github.event.issue.labels.*.name, 'publication-request') &&
+      github.event.comment.body == '/validate')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Authorize governance collaborator before minting a target token
+        run: node scripts/preflight.mjs
+        env:
+          HUB_TOKEN: ${{ github.token }}
+      - name: Create installation token (recommended)
+        if: vars.SOLUTION_APP_ID != ''
+        id: app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.SOLUTION_APP_ID }}
+          private-key: ${{ secrets.SOLUTION_APP_PRIVATE_KEY }}
+          owner: ${{ vars.SOLUTION_APP_OWNER || github.repository_owner }}
+          repositories: ${{ vars.SOLUTION_APP_REPOSITORIES }}
+      - name: Validate one request
+        if: github.event_name == 'issue_comment'
+        run: node scripts/run.mjs validate
+        env:
+          HUB_TOKEN: ${{ github.token }}
+          SOLUTION_TOKEN: ${{ steps.app.outputs.token || secrets.SOLUTION_REPO_TOKEN }}
+      - name: Validate all open requests
+        if: github.event_name != 'issue_comment'
+        run: node scripts/run.mjs sweep
+        env:
+          HUB_TOKEN: ${{ github.token }}
+          SOLUTION_TOKEN: ${{ steps.app.outputs.token || secrets.SOLUTION_REPO_TOKEN }}

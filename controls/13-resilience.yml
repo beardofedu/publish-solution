@@ -1,0 +1,15 @@
+id: resilience
+title: Exercise recovery and operational limits
+tiers: [Moderate, High]
+guide: controls.html#resilience
+why: Wider audiences and sensitive integrations increase the impact of downtime and overload.
+steps:
+  - Agree recovery time and recovery point objectives with the business owner.
+  - Run a restore or rebuild drill, load test, and dependency-outage exercise in a safe non-production environment.
+  - Set budgets, quotas, request limits, and alert routing for both cloud and model consumption.
+acceptance:
+  - Recovery and capacity evidence meets the agreed objectives.
+  - Alerts reach an accountable team and cost limits are configured.
+  - Business owners have accepted residual availability risk.
+prompts:
+  - Propose safe load, restore, and dependency-failure tests based on this application's architecture. Include measurable acceptance thresholds for owners to approve.

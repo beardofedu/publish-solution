@@ -1,0 +1,15 @@
+id: identity
+title: Authenticate users and enforce least privilege
+tiers: [Low, Moderate, High]
+guide: controls.html#identity
+why: An internal URL or hidden button is not an access control.
+steps:
+  - Use your approved identity provider; on Azure prefer Microsoft Entra ID with organization-managed registrations and access policies.
+  - Enforce authorization server-side for each operation and data record; avoid shared accounts and unrestricted admin roles.
+  - Scope integration permissions narrowly and test unauthorized, cross-user, and expired-session cases.
+acceptance:
+  - Only intended users can access the app and its data.
+  - Authorization tests cover negative cases and privileged operations.
+  - Identity permissions and service access have been reviewed by the responsible owner.
+prompts:
+  - Map authentication and authorization boundaries in this application. Suggest Entra ID integration and negative tests without inventing tenant IDs or permissions.

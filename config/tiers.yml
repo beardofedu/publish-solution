@@ -1,0 +1,14 @@
+# Rules are evaluated from highest to lowest; matching any rule selects its tier.
+default: Low
+rules:
+  - tier: High
+    any:
+      exposure: [External]
+      data: [PII, PHI, PCI, Regulated]
+      integrations: [Privileged]
+  - tier: Moderate
+    any:
+      data: [Confidential]
+      audience: [Organization-wide, Public]
+      integrations: [Business-system writes]
+      ai: [Yes]

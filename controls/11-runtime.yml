@@ -1,0 +1,15 @@
+id: runtime
+title: Harden hosting and observe the application
+tiers: [Low, Moderate, High]
+guide: controls.html#runtime
+why: A secure repository does not guarantee a secure cloud runtime.
+steps:
+  - Require HTTPS, disable debug endpoints, patch runtime images, and expose only intended network paths.
+  - On Azure, assess private endpoints, access restrictions, managed certificates, and service-specific baseline policies.
+  - Add structured logging, health checks, metrics, and actionable alerts; Azure Application Insights is one option.
+acceptance:
+  - HTTPS and network access are verified from both intended and unintended locations.
+  - Logs avoid sensitive data; an owner can detect and investigate a failed or abusive request.
+  - Hosting configuration follows the approved cloud baseline.
+prompts:
+  - Inspect runtime and infrastructure configuration for debug settings, network exposure, and observability gaps. Suggest an Azure baseline without assuming live cloud state.

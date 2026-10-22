@@ -1,0 +1,15 @@
+id: supply-chain
+title: Review dependencies and automate updates
+tiers: [Low, Moderate, High]
+guide: controls.html#supply-chain
+why: Generated applications often bring in libraries that are vulnerable, abandoned, or unsuitable for enterprise use.
+steps:
+  - Enable Dependabot alerts and configure version updates for each package ecosystem and GitHub Actions.
+  - Review direct and transitive dependencies, licenses, provenance, and unresolved vulnerability alerts.
+  - Add dependency review to pull requests where available; otherwise use your approved equivalent.
+acceptance:
+  - Dependabot alerts are enabled and scheduled updates are configured.
+  - No unaccepted dependency risk remains; any exception has an owner, expiry, and compensating controls.
+  - Pull requests have a dependency review mechanism.
+prompts:
+  - Inventory dependencies and propose a Dependabot configuration and dependency review workflow for the actual ecosystems in this repository.
