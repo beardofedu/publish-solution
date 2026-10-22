@@ -75,7 +75,17 @@ export async function remindExceptions(hubApi, hub, now = new Date()) {
   let updated = 0;
   for (const issue of issues) {
     const body = exceptionReminder(issue, hub, now);
-    if (!body) continue;
+    if (!body) {
+      const comments = await hubApi.pages(`/repos/${hub}/issues/${issue.number}/comments`);
+      const existing = comments.find(comment => comment.user?.login === 'github-actions[bot]' &&
+        comment.body?.startsWith(exceptionReminderTag));
+      if (existing) {
+        await upsertComment(hubApi, hub, issue.number, exceptionReminderTag,
+          '## Exception review reminder\n\nThe previous warning no longer matches the current record: its original-request link has valid syntax and its entered expiry is more than seven days away. This is not confirmation of approval, renewal, or a validation bypass. Verify the human decision and conditions before relying on this exception.');
+        updated++;
+      }
+      continue;
+    }
     await upsertComment(hubApi, hub, issue.number, exceptionReminderTag,
       body.slice(exceptionReminderTag.length).trimStart());
     updated++;
