@@ -1,8 +1,14 @@
 # Set up a governance instance
 
+For the ordered, role-based administrator journey, use the **[rendered enterprise installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html)** ([local source](docs/setup.html)). It covers customer-controlled adoption, exact UI paths, per-repository onboarding and the first synthetic pilot. Use the existing [enterprise readiness runbook](enterprise-setup/README.md) and its sign-off record for policy and workload launch evidence; this file is the configuration reference.
+
+**Toolkit installation is not workload deployment.** The hub creates issues in selected solution repositories without installing a toolkit workflow there. No Azure resources, cloud credentials or Copilot seat are required for issue generation. An installation pilot can succeed while `/validate` correctly reports workload readiness gaps, including the stock Azure OIDC pattern check.
+
 ## 1. Prepare a repository
 
-Copy/fork this toolkit into a repository managed by the governance team. Use private visibility if intake metadata is confidential. The bundled workflows target GitHub.com, Node.js 22+, and the repository's trusted default branch. If your default branch is not `main`, update `ci.yml` and `pages.yml`.
+Adopt a reviewed independent Git copy into a repository managed by the governance team; retain the license and record the upstream commit/update owner. Use private visibility if intake metadata is confidential, or internal only when enterprise-wide read access is acceptable. A public fork stays public and cannot independently change visibility; respect enterprise fork restrictions. Follow the walkthrough's bootstrap sequence to keep Actions/Pages from running before configuration review.
+
+The bundled workflows target GitHub.com, Node.js 22+, and the repository's trusted default branch. `ghe.com` and GHES need implemented, tested host-specific adaptations, not just an API URL change; see [deployment boundaries](enterprise-setup/README.md#deployment-scope-and-documentation-currency). If your default branch is not `main`, update `ci.yml` and `pages.yml`.
 
 Enable Issues and Actions. Allow the workflow `GITHUB_TOKEN` to write issues; each workflow explicitly requests `contents: read` and `issues: write`. Protect the default branch and review changes to workflows, scripts, dependencies, controls, and policy. Never run target-repository code under the governance credentials.
 
@@ -47,9 +53,8 @@ Create an organization-controlled GitHub App, disable unnecessary webhook subscr
 | Contents | Read | CODEOWNERS, SECURITY.md, tree and workflow inspection |
 | Administration | Read | Security settings, Dependabot enablement, branch protection/rules |
 | Code scanning alerts | Read | Code scanning analyses |
-| Dependabot alerts | Read | Security metadata/related visibility |
 
-No target Actions write, Contents write, deployment, or cloud credentials are needed. Permission labels may differ between App and fine-grained PAT UIs. Verify access against current REST documentation and organizational policy.
+No target Actions write, Contents write, deployment, or cloud credentials are needed. The current validator checks Dependabot enablement with `GET /repos/{owner}/{repo}/vulnerability-alerts`, which requires **Administration read**, not a separate Dependabot alerts read grant; it does not list dependency alerts. See the [App endpoint permission mapping](https://docs.github.com/en/enterprise-cloud@latest/rest/authentication/permissions-required-for-github-apps). Permission labels may differ between App and fine-grained PAT UIs. Verify access against current REST documentation and organizational policy.
 
 Configure these **Actions variables** in the hub:
 
@@ -104,7 +109,9 @@ The empty default allowlist intentionally rejects all targets. Match each target
 
 Customize `config/tiers.yml` and `controls/*.yml` with your governance owners. Update the URLs in the issue form config and HTML pages when copying the repository. See [CUSTOMIZING.md](CUSTOMIZING.md).
 
-## 4. Enable Pages
+## 4. Optionally enable Pages
+
+Pages is not required for issue generation. If it is not approved, disable **Publish guide** and keep its push trigger removed in your adopted copy; use an approved authenticated documentation host and set `guide_url` accordingly. Before publishing internal content, complete the [Pages audience/access prerequisites](enterprise-setup/05-pages-copilot.md).
 
 In **Settings → Pages → Build and deployment**, choose **GitHub Actions**. Alternatively, an authorized maintainer can configure workflow-based Pages:
 
@@ -129,6 +136,10 @@ Use a disposable solution repository you own and synthetic intake data:
 7. Have an independent reviewer inspect evidence and apply `approved-for-production` manually. Confirm actual release approvals live in protected deployment environments.
 
 Both workflows share a concurrency group to serialize mutations. Do not cancel a running intake. If a run fails after some issues were created, rerun `/publish`: markers recover partial creation without duplicate issues. Do not delete generated markers or the bot's state comment. A changed intake/catalog reopens required controls for fresh evidence; historical controls no longer applicable are retained for audit.
+
+## 6. Onboard each additional solution repository
+
+Repeat all three scope updates for every new target: add it to the App installation's selected repositories (or the approved PAT's selection), add its name to hub variable `SOLUTION_APP_REPOSITORIES` in App mode, and add its exact `owner/name` to `config/policy.yml` through review. Preserve existing targets in both lists. Confirm active state, Issues, owners, visibility and access, then open a new synthetic request and repeat the pilot. No target toolkit workflow or copied hub secret is needed. For detailed UI paths and maintenance/disablement, see [onboarding](https://beardofedu.github.io/publish-solution/setup.html#onboard) and [operations](https://beardofedu.github.io/publish-solution/setup.html#operate).
 
 ## Troubleshooting
 

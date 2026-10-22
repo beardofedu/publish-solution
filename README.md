@@ -6,6 +6,8 @@ A public, adaptable toolkit for citizen developers turning AI-built prototypes i
 
 **[Read the rendered guide](https://beardofedu.github.io/publish-solution/)** · [Set up your instance](SETUP.md) · [Customize controls](CUSTOMIZING.md)
 
+Administrators: follow the **[enterprise installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html)** from an empty customer-owned hub to a synthetic citizen-developer pilot, then use the existing [enterprise readiness runbook and sign-off](enterprise-setup/README.md) for broader launch decisions. Issue generation runs in the hub: no toolkit workflow in solution repositories, Azure resources or cloud credentials are needed just to create the plan.
+
 ## How it works
 
 1. Open **Request publication** with the solution repository, owner team aliases, data classification, exposure, audience, runtime AI usage, integrations, and hosting.

@@ -4,6 +4,14 @@ Use this runbook **before inviting citizen developers** to your enterprise's pub
 
 The toolkit coordinates evidence and review. It does not provision your enterprise policies, purchase security licenses, deploy Azure resources, or make an approval label a production access control.
 
+## Start with installation; sign off workload readiness separately
+
+Follow the **[rendered enterprise installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html)** ([local source](../docs/setup.html)) for ordered UI steps from a customer-owned hub to a citizen developer's first generated plan, including authentication, optional guide hosting, each new repository and ongoing operations. It reuses this runbook for detailed evidence and approvals rather than introducing a competing checklist.
+
+An **issue-generation installation pilot** needs hub Actions, target access/Issues, credentials and policy, but no target toolkit workflow, Azure resources/credentials or Copilot seat. It is successful when the correct parent/control issues are created idempotently and validation reports honest gaps. Record that limited scope in the existing sign-off record; do not mark unexecuted workload tests as passed.
+
+The gates below address **broader enterprise service/workload launch readiness**. Azure gate 4 and cloud pilot tests apply when preparing a workload deployment, not as an installer for the intake service. Pages is optional when an approved alternative guide host is used. The stock Azure-specific validator can still block workload readiness until implemented requirements or an approved, tested detector adaptation are satisfied.
+
 ## Complete these gates in order
 
 Copy [the sign-off record](sign-off.md) into your internal change-management system or a restricted readiness issue. Replace every `<placeholder>`. Check a task only after attaching evidence. A blocked prerequisite blocks later gates; an exception needs a named risk owner, compensating control, expiry and retest.
