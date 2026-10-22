@@ -87,7 +87,7 @@ async function liveDiagnostics(config, hub, targets, env) {
     if (appMode && !appRepositories?.trim()) results.push(amber({ name: 'App repository scope', detail: 'SOLUTION_APP_REPOSITORIES is empty or not visible at repository scope. The bundled workflow guard refuses an empty value; organization-scoped variables are not inspected.' }));
     else if (appMode && appRepositories) {
       const configuredNames = appRepositories.split(',').map(value => value.trim());
-      const validName = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+      const validName = /^(?!\.{1,2}$)[a-zA-Z0-9_.-]+$/;
       if (configuredNames.some(name => !validName.test(name)) ||
           new Set(configuredNames.map(name => name.toLowerCase())).size !== configuredNames.length) {
         results.push(red({ name: 'App repository list format', detail: 'Use unique repository names only, comma-separated, with no owner prefixes or empty entries.' }));
