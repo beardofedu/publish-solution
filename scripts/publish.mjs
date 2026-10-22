@@ -181,6 +181,10 @@ export async function validateRequest({ hubApi, targetApi, hub, issue, config })
       body: `${marker(hub, issue.number, 'parent')}\nSource: ${live.html_url}\nRisk tier: **${tier}**\n\n${checklist.join('\n')}\n\n${report.body}`,
     });
   }
+  const current = await hubApi.request('GET', `/repos/${hub}/issues/${issue.number}`);
+  if (current.state !== 'open' || contextFor(current, hub, config).basis !== basis) {
+    throw new Error('The request changed or closed during validation; run /publish again.');
+  }
   await upsertComment(hubApi, hub, issue.number, reportTag, report.body);
   await setLabels(hubApi, hub, issue.number, report.ready ? ['ready-for-review'] : [],
     report.ready ? [] : ['ready-for-review', 'approved-for-production']);
