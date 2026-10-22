@@ -6,6 +6,8 @@
 
 Use disposable **selected, non-production** solution repositories with the intended private/internal visibility. Do not use real credentials or sensitive data as test fixtures. Run tests as an ordinary citizen developer, governance reviewer and the actual workflow identity, not solely as an enterprise administrator.
 
+For the narrower **toolkit installation pilot**, follow the [rendered walkthrough](https://beardofedu.github.io/publish-solution/setup.html#pilot): prove request access, authorized processing, exact generated issues, rerun recovery and honest validation gaps. Record this as a scoped subset of the matrix below, not full go-live approval. No target toolkit workflow or Azure resources/credentials are needed for that subset. The full matrix includes separate workload security/deployment and enterprise service-launch evidence.
+
 ## 1. Prepare the test record
 
 - [ ] Complete gates 1-6 and freeze the implementation and control-catalog commit.

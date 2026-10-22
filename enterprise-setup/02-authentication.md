@@ -22,11 +22,10 @@ This is the stock permission profile for issue creation plus read-only repositor
 | Metadata | Read-only (automatic) | Identify selected repositories and basic metadata |
 | Issues | Read and write | Parent/control issues, sub-issue linkage, comments and labels |
 | Contents | Read-only | Inspect CODEOWNERS, SECURITY.md, configuration and workflow files; not modify solution code |
-| Administration | Read-only | Read repository security/configuration evidence and rules/settings |
+| Administration | Read-only | Read rules/settings and Dependabot enablement (`GET /repos/{owner}/{repo}/vulnerability-alerts`) |
 | Code scanning alerts | Read-only (required by the stock validator) | Read CodeQL/code-scanning evidence (`security_events` in some token/API descriptions) |
-| Dependabot alerts | Read-only (required by the stock validator) | Read dependency-alert evidence (`vulnerability_alerts` in some token/API descriptions) |
 
-**No default grants:** Secret scanning alerts, Contents write, Workflows write, Administration write, Secrets access, Members access or organization administration. The stock validator checks secret-scanning enablement, not secret-alert contents. Azure deployment permissions are a **different identity** and do not belong in this App.
+**No default grants:** Dependabot alerts, Secret scanning alerts, Contents write, Workflows write, Administration write, Secrets access, Members access or organization administration. The stock validator checks Dependabot enablement using Administration read, not the dependency alert-list API; a separate Dependabot alerts read grant is not required by current scripts. It checks secret-scanning enablement, not secret-alert contents. Azure deployment permissions are a **different identity** and do not belong in this App.
 
 The repository REST API restricts visibility of `security_and_analysis`. Test with the **actual installation token**, not an admin's interactive `gh` session. If required fields are omitted, capture the endpoint/permission failure and stop readiness; a 200 response alone does not prove visibility. Do not escalate to Administration write without a reviewed endpoint-specific justification.
 
