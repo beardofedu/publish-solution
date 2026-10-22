@@ -3,3 +3,6 @@ contact_links:
   - name: Read the publication guide
     url: https://beardofedu.github.io/publish-solution/
     about: Start here before requesting publication. Never include secrets or customer data.
+  - name: Choose a publication lifecycle request
+    url: https://beardofedu.github.io/publish-solution/requests.html
+    about: Understand publication, re-assessment, control exception, and decommission requests and which steps require manual governance review.

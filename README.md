@@ -14,6 +14,19 @@ A public, adaptable toolkit for citizen developers turning AI-built prototypes i
 4. Complete each required control with evidence and close it **as completed**. A maintainer comments `/validate` on the original request; daily checks also cover open requests.
 5. A passing report applies `ready-for-review`. A **human governance reviewer** inspects evidence and applies `approved-for-production`. Actual deployments still require independent production-environment protection.
 
+The publication form also collects a solution description (including AI behavior), a target go-live date, dev/test/prod environment, and required attestations. These stay in the source issue as human-review context; they do not change tiering or waive controls. Existing intake fields and legacy requests remain compatible.
+
+## Choose the right request
+
+| Form | Label | Process |
+| --- | --- | --- |
+| Request publication | `publication-request` | Automated plan generation after authorized maintainer review |
+| Change or re-assessment | `reassessment-request` | Manual triage; update and rerun `/publish` on the **original** request to re-tier, reuse existing issues, and create only missing controls. Changed scope reopens required existing work for fresh evidence. |
+| Control exception | `control-exception` | Manual, time-limited governance/risk-owner decision; never an automatic validation bypass |
+| Decommission | `decommission-request` | Manual review and verified retirement; never automatic deletion or credential revocation |
+
+[Open the issue chooser](https://github.com/beardofedu/publish-solution/issues/new/choose) or read the [lifecycle request guide](https://beardofedu.github.io/publish-solution/requests.html). Do not apply `publication-request` to the three manual forms; their own request numbers would create separate plans. See [SETUP.md](SETUP.md) for label setup and governance runbooks.
+
 Highest matching tier wins: external exposure, regulated/personal/payment data, or privileged integrations are **High**. Confidential data, broad audiences, business-system writes, or runtime LLM use are **Moderate**. Otherwise the default is **Low**. The rules are configurable, not a universal risk model.
 
 ## Included

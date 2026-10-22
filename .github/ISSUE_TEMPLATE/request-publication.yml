@@ -9,6 +9,8 @@ body:
         Do not paste secrets, personal information, customer names, or sensitive architecture here.
         This is a public repository. Use team aliases for owners. For confidential work, deploy this toolkit in a private governance repository.
         A maintainer must allowlist your target repository and authorize processing.
+        Describe the intended use even for dev or test: those environments do not reduce the risk tier.
+        Read the guide before submitting: https://beardofedu.github.io/publish-solution/
   - type: input
     id: repository
     attributes:
@@ -74,3 +76,46 @@ body:
       options: [Azure, Other cloud, Undecided]
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: '<!-- publish-solution:metadata -->'
+  - type: textarea
+    id: solution_description
+    attributes:
+      label: Solution description
+      description: Explain the business purpose, what the app does, and how AI helped build it or is used at runtime. Use non-sensitive examples.
+      placeholder: |
+        Purpose and intended users:
+        Main capabilities and data flows:
+        AI-assisted development:
+        Runtime AI behavior (or none):
+    validations:
+      required: true
+  - type: input
+    id: go_live_date
+    attributes:
+      label: Target go-live date
+      description: Requested date in YYYY-MM-DD format. A date is not a guarantee of approval.
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: dropdown
+    id: target_environment
+    attributes:
+      label: Target environment
+      description: Planning context only. Dev and test still require truthful production-scope risk answers and governance review.
+      options: [dev, test, prod]
+    validations:
+      required: true
+  - type: checkboxes
+    id: attestations
+    attributes:
+      label: Requester attestations
+      description: These statements support human review; they do not grant approval or replace evidence.
+      options:
+        - label: I have not included secrets, personal data, customer names, or sensitive architecture in this issue.
+          required: true
+        - label: I have read the publication guide linked above and understand that automated readiness is not production approval.
+          required: true
+        - label: I accept responsibility for completing the generated control issues with evidence and obtaining the required owner and governance reviews.
+          required: true

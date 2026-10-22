@@ -27,7 +27,8 @@ export const repositoryPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]*\/[a-zA-Z0-9_.-]+$/;
 
 export function parseIntake(body) {
   const sections = new Map();
-  for (const match of (body ?? '').matchAll(/^### ([^\r\n]+)\r?\n+([\s\S]*?)(?=^### |(?![\s\S]))/gm)) {
+  const structuredBody = (body ?? '').split('<!-- publish-solution:metadata -->', 1)[0];
+  for (const match of structuredBody.matchAll(/^### ([^\r\n]+)\r?\n+([\s\S]*?)(?=^### |(?![\s\S]))/gm)) {
     const heading = match[1].trim();
     if (sections.has(heading)) throw new Error('Duplicate intake field headings are not allowed.');
     sections.set(heading, match[2].trim());

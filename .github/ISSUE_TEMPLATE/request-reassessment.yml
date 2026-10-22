@@ -1,0 +1,75 @@
+name: Request change or re-assessment
+description: Ask governance to reassess an existing publication plan after scope or risk changes.
+title: "[Re-assessment]: "
+labels: [reassessment-request]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, personal data, customer names, or sensitive architecture.
+        This form starts a manual governance review; it does not automatically create a second publication plan.
+        Governance must update and re-run the ORIGINAL publication request using /publish, not this issue.
+        The original plan reuses existing issues and creates only missing applicable controls; changed scope reopens required existing controls for fresh evidence.
+        Read https://beardofedu.github.io/publish-solution/requests.html#reassessment before submitting.
+  - type: input
+    id: original_request
+    attributes:
+      label: Original publication request
+      description: Link to the original request in the governance repository, not just the solution tracking issue.
+      placeholder: https://github.com/YOUR-ORG/YOUR-HUB/issues/123
+    validations:
+      required: true
+  - type: input
+    id: repository
+    attributes:
+      label: Solution repository
+      description: Exact owner/name. A different repository needs a new publication request.
+      placeholder: contoso/team-helper
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: Scope and risk changes
+      description: Compare approved/current use to proposed use. Give updated answers for every affected risk field; do not paste actual sensitive data.
+      placeholder: |
+        Business purpose and scope (before -> after):
+        Data classification (before -> after):
+        Internal/external exposure (before -> after):
+        Audience size (before -> after):
+        Runtime AI/LLM use and behavior (before -> after):
+        Integrations and privileges (before -> after):
+        Hosting and target environment (before -> after):
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_impact
+    attributes:
+      label: Existing evidence and impact
+      description: Link affected control issues and describe what evidence may no longer be valid, deployment impact, and rollback or mitigations.
+    validations:
+      required: true
+  - type: input
+    id: technical_owner
+    attributes:
+      label: Accountable technical owner
+      description: Use a team alias; identify who will complete and evidence the reassessment.
+    validations:
+      required: true
+  - type: input
+    id: change_date
+    attributes:
+      label: Requested change date
+      description: YYYY-MM-DD. Do not implement the change before the required review.
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: checkboxes
+    id: attestations
+    attributes:
+      label: Requester attestations
+      options:
+        - label: I have not included secrets or sensitive data and will obtain governance review before the change.
+          required: true
+        - label: I understand governance must update the original intake, re-tier it, and review refreshed evidence; this request does not preserve prior approval.
+          required: true
