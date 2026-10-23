@@ -59,7 +59,7 @@ body:
     attributes:
       label: AI or LLM usage at runtime
       description: Select Yes if the deployed solution calls a model, not merely because AI helped write code.
-      options: [No, Yes]
+      options: ["No", "Yes"]
     validations:
       required: true
   - type: dropdown
