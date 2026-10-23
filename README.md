@@ -6,7 +6,7 @@ A public, adaptable toolkit for citizen developers turning AI-built prototypes i
 
 **[Read the rendered guide](https://beardofedu.github.io/publish-solution/)** · [Set up your instance](SETUP.md) · [Customize controls](CUSTOMIZING.md)
 
-Administrators: follow the **[enterprise installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html)** from an empty customer-owned hub to a synthetic citizen-developer pilot, then use the existing [enterprise readiness runbook and sign-off](enterprise-setup/README.md) for broader launch decisions. Issue generation runs in the hub: no toolkit workflow in solution repositories, Azure resources or cloud credentials are needed just to create the plan.
+**Administrators:** start with the [installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html). The **hub** is your governance repository; it creates plans in separate **solution repositories**. Issue generation needs no target toolkit workflow or Azure credentials. Use the [enterprise readiness runbook](enterprise-setup/README.md#complete-these-gates-in-order) for workload-launch evidence.
 
 ## Choose a path
 
@@ -20,7 +20,7 @@ Administrators: follow the **[enterprise installation walkthrough](https://beard
 4. Complete each required control with evidence and close it **as completed**. A maintainer comments `/validate` on the original request; daily checks also cover open requests.
 5. A passing report applies `ready-for-review`. A **human governance reviewer** inspects evidence and applies `approved-for-production`. Actual deployments still require independent production-environment protection.
 
-The publication form also collects a solution description (including AI behavior), a target go-live date, dev/test/prod environment, and required attestations. These stay in the source issue as human-review context; they do not change tiering or waive controls. Existing intake fields and legacy requests remain compatible.
+The description, requested date, environment, and attestations provide human-review context, not tier inputs or control waivers. See [request types](https://beardofedu.github.io/publish-solution/requests.html#publication).
 
 ## Choose the right request
 
@@ -33,9 +33,7 @@ The publication form also collects a solution description (including AI behavior
 
 [Open the issue chooser](https://github.com/beardofedu/publish-solution/issues/new/choose) or read the [lifecycle request guide](https://beardofedu.github.io/publish-solution/requests.html). Do not apply `publication-request` to the three manual forms; their own request numbers would create separate plans. See [SETUP.md](SETUP.md) for label setup and governance runbooks.
 
-Highest matching tier wins: external exposure, regulated/personal/payment data, or privileged integrations are **High**. Confidential data, broad audiences, business-system writes, or runtime LLM use are **Moderate**. Otherwise the default is **Low**. The rules are configurable, not a universal risk model.
-
-The generated validation report includes a handoff package with the current validation timestamp and default-branch commit, applicable control/evidence locations, automated status, unresolved gaps, and blank decision fields for named governance review and separate platform acceptance. Those decision fields are deliberately not filled by automation.
+The highest matching risk tier wins; see the [configurable tier guide](https://beardofedu.github.io/publish-solution/index.html#risk-tiers). Validation produces a commit-bound handoff report. Governance review and platform acceptance remain separate human decisions; see [how to read the package](https://beardofedu.github.io/publish-solution/governance.html#handoff).
 
 ## Included
 
@@ -66,9 +64,9 @@ npm run preflight
 
 Node.js 22+ is required. CI also runs `actionlint`.
 
-**Optional installation helper:** from the trusted adopted checkout, use `npm run bootstrap -- --repo contoso/publish-solution` for hub diagnostics and a missing-label preview, with approved hub-only `HUB_TOKEN` injection. It makes no writes by default, including local files. Only explicit `--labels --apply` creates missing labels; `--scaffold --guide-url https://guide.example.org/publication --target contoso/team-helper` prints policy/link/App-variable proposals for manual review, never configuration approval or credential upload. Pages is separately opt-in and conservative: public hubs only, explicit visibility acknowledgment and verified manual-only workflow; existing/private/internal sites stay untouched/manual. See [optional bootstrap permissions, examples and troubleshooting](SETUP.md#optional-preview-first-bootstrap) or the [rendered walkthrough](https://beardofedu.github.io/publish-solution/setup.html#bootstrap). Fully manual installation remains supported; no live bootstrap pilot is implied.
+**Optional installation helper:** preview hub setup with `npm run bootstrap -- --repo contoso/publish-solution` from your trusted checkout. The preview makes no writes; see [bootstrap permissions and explicit apply options](SETUP.md#optional-preview-first-bootstrap), including public-Pages restrictions. Manual installation remains supported.
 
-`npm run preflight` is static and read-only; it needs no credentials. `npm run preflight -- --live` optionally inspects repository-scoped Actions variable/secret names and selected-target read access with `GITHUB_REPOSITORY`, `HUB_TOKEN`, and optionally `SOLUTION_TOKEN`; organization/environment-scoped values are not enumerated. It never prints token/secret values, writes resources, or claims a visible secret is valid. Bundled App workflows refuse to mint an installation token unless `SOLUTION_APP_REPOSITORIES` exactly matches the reviewed allowlist for its one installation owner.
+`npm run preflight` needs no credentials and makes no network calls or writes. [Optional live preflight](SETUP.md#safe-configuration-preflight) checks names and read access, not secret validity or write access. App workflows require the token's repository list to exactly match the reviewed allowlist for one installation owner.
 
 **Do not submit secrets, customer-specific information, personal data, or sensitive architecture to this public repository.** Organizations should use a private governance instance for confidential intakes and review their Pages publishing visibility.
 
@@ -78,6 +76,6 @@ This toolkit is **not a compliance certification, penetration test, cloud scanne
 
 Daily lifecycle sweeps add due/expired/incomplete exception reminders but never renew exceptions or bypass FAIL/UNKNOWN checks. Opening or editing an authorized reassessment clears advisory labels on its linked original publication request; governance still updates that original request and reruns `/publish`.
 
-Controls are cloud-agnostic; deployment guidance and the stock OIDC detector focus on Azure. For other clouds, implement a reviewed equivalent detector or record a separate governance decision without representing an automatic PASS. No customer-specific data or policies are included.
+**Stock support is GitHub.com only**; other hosts need a [tested adaptation](enterprise-setup/README.md#deployment-scope-and-documentation-currency). Controls are cloud-agnostic, but the stock deployment-identity check is Azure-specific. Other clouds need a reviewed, tested detector or a separate governance decision that does not claim an automated PASS. No customer-specific data or policies are included.
 
 MIT licensed. See [SECURITY.md](SECURITY.md) for reporting and [CONTRIBUTING.md](CONTRIBUTING.md) for changes.

@@ -22,14 +22,13 @@
   <article id="path-a">
     <span class="tag">Default · implemented</span><h2>Path A: reviewed readiness package, platform-owned deployment</h2>
     <ol>
-      <li>A citizen developer submits a structured request in the governance hub. A maintainer reviews scope, allowlists the exact solution repository, and runs the authorized intake.</li>
-      <li>The toolkit creates a stable parent/control issue set in that repository. Each control includes its lead/supporting roles, useful prerequisites, steps, acceptance criteria, evidence checklist, examples of sufficient and insufficient evidence, and a guide link.</li>
-      <li>Owners add safe evidence references, complete controls, and ask for validation on the original request. Repository checks are bound to a default-branch commit; a branch change during validation fails the run. FAIL and UNKNOWN remain blocking.</li>
-      <li>The generated handoff records source request, repository, risk tier, control status/evidence locations, validation time and commit basis, open gaps, and explicit pending fields for the human governance decision and separate platform acceptance.</li>
-      <li>A named governance reviewer verifies the evidence and records approve/reject/defer, rationale, residual risks, conditions, and expiry. A named platform owner separately accepts the deployment boundary, environment, rollback, and operations responsibility.</li>
-      <li>The customer platform team independently deploys under its protected release controls. New scope, changed evidence/commit, expired exceptions, or changed policy require reassessment and fresh review.</li>
+      <li>Submit a <a href="requests.html#publication">publication request</a> in the hub. A maintainer reviews and authorizes the exact solution repository.</li>
+      <li>Work the stable parent/control issues there: roles, prerequisites, steps, evidence examples, and guide links are included.</li>
+      <li>Complete controls with safe evidence links; validate the original request. Checks bind to the default-branch commit and fail if it changes during validation. FAIL and UNKNOWN block readiness.</li>
+      <li>Use the commit-bound <a href="governance.html#handoff">handoff package</a> for named governance review and separate platform acceptance. Both decisions remain pending until humans record them.</li>
+      <li>The platform team independently deploys through protected release controls. Changed scope, evidence/commit, policy, or expired exceptions require fresh review.</li>
     </ol>
-    <p><strong>Prepared</strong> means the machine assembled a package. <strong>Reviewed</strong> means a named human inspected evidence and recorded a decision. <strong>Accepted</strong> means the platform owner explicitly accepted the operational handoff. These states are not interchangeable and none is inferred from a label.</p>
+    <p><a href="governance.html#handoff">Prepared, Reviewed, and Accepted</a> are distinct stages, never inferred from labels. Labels are advisory, not release authorization.</p>
     <p>A Low tier is not an exemption: it still requires every applicable baseline control and evidence review. Marking an environment <code>prod</code> is human context, not an automatic tier change; platform owners must still verify production identity, network, data, monitoring, rollback, and release protections.</p>
     <p>The automation cannot prove live Azure identity, network, data handling, alert remediation, evidence quality, or deployment. Reviewers must verify those with the responsible owners. <a href="governance.html">Reviewer responsibilities</a> · <a href="requests.html">Reassessment, exception, and retirement routing</a>.</p>
   </article>
@@ -94,22 +93,15 @@ module workload './modules/approved-workload.bicep' = {
   <article id="path-c">
     <span class="tag">Optional · reference architecture only</span><h2>Path C: protected release integration</h2>
     <p>Use this design when a customer release service consumes readiness evidence. Keep the release decision inside an independently protected system, not a GitHub issue label or a generated comment.</p>
-    <ol>
-      <li><strong>Bind evidence to immutable inputs.</strong> Record source request ID, solution repository, exact reviewed commit, control-catalog/policy version, build artifact digest, environment, and timestamp. Reject unknown, missing, mismatched, or stale values.</li>
-      <li><strong>Separate duties.</strong> The requester cannot approve their own release. Governance verifies policy/evidence; the platform owner verifies environment and deployment boundary; a protected environment/release authority independently permits the deployer.</li>
-      <li><strong>Revalidate at the decision boundary.</strong> Immediately before release, fetch current request/policy and evidence state again, ensure the exact commit and artifact are unchanged, confirm all required checks passed, and confirm no new request edits, open reassessment, expired exception, revoked approval, or changed permissions.</li>
-      <li><strong>Make revocation effective.</strong> A new commit, scope edit, catalog/policy change, evidence withdrawal, failed check, exception expiry, or reviewer revocation invalidates the prior decision. Revoke queued deployment authorization where possible; do not rely on daily sweeps to stop an immediate release.</li>
-      <li><strong>Fail closed and preserve audit.</strong> If the evidence API is unavailable, identity differs, state cannot be read, or a time-of-check/time-of-use race is detected, stop before credential access. Record who decided, the evidence digest, decision time, failure reason, and any later manual recovery.</li>
-    </ol>
-    <h3>Threats the integrating platform must handle</h3>
-    <ul>
-      <li>Issue labels and text are mutable, and issue closure does not prove evidence quality.</li>
-      <li>Evidence can become stale between reviewer approval and deployment; bind the approval to a commit and artifact digest and verify again at execution.</li>
-      <li>Approvals can be revoked or the requester may change the target after review; re-read and compare exact scope at the release boundary.</li>
-      <li>Concurrent requests, duplicated callbacks, API outages, expired tokens, changed team membership, and partial deployment need idempotency, safe retry, and explicit rollback behavior.</li>
-      <li>A static workflow pattern cannot attest Azure federation, live permissions, network boundaries, or successful rollback.</li>
-    </ul>
-    <p>This is a design checklist, not a supplied policy engine. Any implementation must be threat-modeled, independently reviewed, and tested against stale evidence, revocation, and TOCTOU cases before production use.</p>
+    <h3>Threats and required release controls</h3>
+    <div class="table-wrap"><table><thead><tr><th scope="col">Failure case</th><th scope="col">Integrating platform must enforce</th></tr></thead><tbody>
+      <tr><td>Mutable labels/text or unverified issue closure</td><td>Inspect evidence independently. Bind request ID, repository, reviewed commit, catalog/policy version, artifact digest, environment, and timestamp; reject missing, unknown, stale, or mismatched inputs.</td></tr>
+      <tr><td>Self-approval or unclear authority</td><td>The requester cannot approve their own release. Separate governance review, platform acceptance, and protected release authority. Verify live cloud trust, permissions, network, and rollback; workflow text proves none of these.</td></tr>
+      <tr><td>Evidence changes between approval and deployment</td><td>Immediately before release, reread request/policy/evidence; compare exact commit/artifact and confirm all checks PASS. Reject edits, open reassessments, expired exceptions, withdrawn evidence, revoked approvals, or changed permissions.</td></tr>
+      <tr><td>Revocation while deployment is queued</td><td>Invalidate decisions on commit/scope/catalog/policy changes, failed checks, evidence withdrawal, expiry, or reviewer revocation. Revoke queued authorization where possible; never wait for a daily sweep.</td></tr>
+      <tr><td>Concurrency, repeated callbacks, API/token failure, changed identity/membership, or partial deployment</td><td>Stop before credential access when state or identity cannot be verified. Use stable rerun identifiers, safe retries, and explicit rollback. Audit decision-maker, evidence digest, time, failure, and manual recovery.</td></tr>
+    </tbody></table></div>
+    <p>This is a design checklist, not a supplied policy engine. Threat-model, independently review, and test any implementation, including state changes between checking and using evidence (a time-of-check/time-of-use race).</p>
   </article>
 
   <aside class="notice"><strong>Host boundary:</strong> the stock toolkit targets GitHub.com. GHES and GHEC data-residency hosts require specific API, action, identity, feature, and Pages adaptations plus a host-specific pilot. Documentation examples are not evidence of support.</aside>

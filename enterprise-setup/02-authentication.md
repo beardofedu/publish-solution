@@ -15,17 +15,7 @@ The intake repo's `GITHUB_TOKEN` is scoped to that repository. Use the implement
 
 ### Repository permission review
 
-This is the stock permission profile for issue creation plus read-only repository validation. If the deployed code needs another endpoint/permission, document it and obtain security approval rather than granting a broad write role.
-
-| GitHub App repository permission | Access | Purpose |
-|---|---|---|
-| Metadata | Read-only (automatic) | Identify selected repositories and basic metadata |
-| Issues | Read and write | Parent/control issues, sub-issue linkage, comments and labels |
-| Contents | Read-only | Inspect CODEOWNERS, SECURITY.md, configuration and workflow files; not modify solution code |
-| Administration | Read-only | Read rules/settings and Dependabot enablement (`GET /repos/{owner}/{repo}/vulnerability-alerts`) |
-| Code scanning alerts | Read-only (required by the stock validator) | Read CodeQL/code-scanning evidence (`security_events` in some token/API descriptions) |
-
-**No default grants:** Dependabot alerts, Secret scanning alerts, Contents write, Workflows write, Administration write, Secrets access, Members access or organization administration. The stock validator checks Dependabot enablement using Administration read, not the dependency alert-list API; a separate Dependabot alerts read grant is not required by current scripts. It checks secret-scanning enablement, not secret-alert contents. Azure deployment permissions are a **different identity** and do not belong in this App.
+Review the [canonical target permission matrix](../SETUP.md#recommended-github-app) against the deployed endpoints. Record each grant, reason, approver, and actual-token evidence. Extra permissions require endpoint-specific security approval, not a broad write role. Azure deployment uses a **different identity**, never this App.
 
 The repository REST API restricts visibility of `security_and_analysis`. Test with the **actual installation token**, not an admin's interactive `gh` session. If required fields are omitted, capture the endpoint/permission failure and stop readiness; a 200 response alone does not prove visibility. Do not escalate to Administration write without a reviewed endpoint-specific justification.
 
@@ -36,8 +26,8 @@ Sources: [Registering a GitHub App](https://docs.github.com/en/enterprise-cloud@
 - [ ] Install the App on **selected solution repositories** under `SOLUTION_APP_OWNER`. The stock hub workflow uses its own `GITHUB_TOKEN` for intake issues, so the App does not need intake access; the hub cannot also be a solution target. Record installation IDs, owner orgs and repository selections, not tokens.
 - [ ] Prove a selected pilot repo is accessible and an unselected repo is denied. Repeat when onboarding a new org; review new requested App permissions before approving installation updates.
 - [ ] Generate an App private key. Save the PEM only in approved secure storage and the GitHub Actions secret consumed by the implementation; never commit it, paste it into issues, or include it in a screenshot.
-- [ ] Set repository variable `SOLUTION_APP_ID` and Actions secret `SOLUTION_APP_PRIVATE_KEY` in intake. Set `SOLUTION_APP_OWNER` explicitly to the selected solution org (otherwise it defaults to `github.repository_owner`) and `SOLUTION_APP_REPOSITORIES` to the selected repository **names only**, comma/newline separated, without `owner/` prefixes. These must cover the targets in `config/policy.yml`. The App ID is not the installation ID, client secret or private key.
-- [ ] Do not leave `SOLUTION_APP_REPOSITORIES` empty: the token action may then select all repositories in that installation. Narrow both installation access and minted-token selection.
+- [ ] Configure the [exact App variables/key](../SETUP.md#recommended-github-app) in the hub. Record the App ID (not installation/client ID), installation owner, and repository **names only**, without `owner/`. Installation selection, token list, and policy allowlist must match.
+- [ ] Verify empty, missing, or extra repository names fail before token creation. Do not rely on the token action's broader empty-list behavior.
 - [ ] Prefer a repository secret in the intake repo, or a selected-repository organization secret restricted to intake. Do not distribute the App key to solution repos.
 - [ ] Confirm the workflow references the credential's actual scope. An environment secret is unavailable unless the job targets that environment; adding environment approval can also intentionally pause automated intake.
 - [ ] Disable/remove the unused PAT alternative so an unexpected auth fallback cannot hide a broken App setup.
@@ -66,7 +56,7 @@ Sources: [PAT behavior and limitations](https://docs.github.com/en/enterprise-cl
 
 ## 4. Complete the configuration inventory
 
-Use [SETUP.md](../SETUP.md) and actual workflow expressions as the naming contract. Do not create invented `APP_ID`, PAT or Azure variables because an example elsewhere uses that name.
+Use [SETUP.md](../SETUP.md#recommended-github-app) as the naming contract and verify actual workflow expressions. The inventory below records evidence, not a second configuration procedure.
 
 | Kind | Exact name from deployed workflow/config | Scope | Owner | Evidence / rotation or review date |
 |---|---|---|---|---|
@@ -83,13 +73,13 @@ Use [SETUP.md](../SETUP.md) and actual workflow expressions as the naming contra
 | Azure IDs, if consumed | `<exact workflow names>` | `<solution environment secrets/variables as implemented>` | `<cloud owner>` | `<link>` |
 
 - [ ] Confirm required labels exist or the documented automation creates them. Do not rename `ready-for-review` or `approved-for-production` without updating every producer, consumer and guide.
-- [ ] Before exposing the form, create all five form/approval labels (`publication-request`, `approved-for-production`, `reassessment-request`, `control-exception`, `decommission-request`) using the manual commands or [optional bootstrap](../SETUP.md#optional-preview-first-bootstrap). Preview first, then select `--labels --apply` with hub-only Issues write and diagnostic Administration read; existing labels/customizations are preserved. Automation creates risk/readiness labels. If the adopted default branch is not `main`, update the implementation's CI and Pages branch filters through the normal protected review process.
+- [ ] Before exposing the form, verify the [five required labels](../SETUP.md#1-prepare-a-repository) exist; automation creates risk/readiness labels. Review CI/Pages branch filters if the default branch is not `main`.
 - [ ] Do not create a target control-label taxonomy expecting the stock automation to consume it: target control issue IDs use idempotency markers, not generated control labels. Preserve those markers.
 - [ ] Verify environment names, reviewer teams, deployment branch restrictions and secret references exactly match workflows. The intake/validation jobs should not accidentally depend on the `github-pages` environment or Azure production credentials.
 - [ ] Record workflow-token permissions separately from App permissions: configuring one does not configure the other.
 
 Stock runtime environment names `HUB_TOKEN` and `SOLUTION_TOKEN` are **not additional repository secrets**: the workflows map `HUB_TOKEN` from the hub `GITHUB_TOKEN` (`contents: read`, `issues: write`) and `SOLUTION_TOKEN` from the selected App/PAT path. Keep the two authority boundaries separate.
 
-For the optional local bootstrap, `HUB_TOKEN` instead comes from approved hub-only secure environment injection; it is not a request to add a new Actions secret. No `SOLUTION_TOKEN` is required or used. `--scaffold --guide-url https://guide.example.org/publication --target contoso/team-helper --app-id 12345` prints field proposals for policy, links and the exact App variable names; replace examples with reviewed values. It preserves existing policy entries and does not save files, approve a target, set variables, create/install an App, change installation scope or upload credentials. Incorporate approved edits into a protected PR and configure the selected installation, variables and securely stored key manually. Never put PEM/token values in command arguments or proposals. Follow [SETUP.md](../SETUP.md) for per-operation permissions and unresolved diagnostic failures.
+For local bootstrap, `HUB_TOKEN` instead uses approved hub-only secure environment injection, not a new Actions secret; no `SOLUTION_TOKEN` is used. Follow the [bootstrap permission/proposal reference](../SETUP.md#bootstrap-permissions). Proposals never authorize targets or upload credentials; approved edits and installation scope remain manual.
 
 **Gate exit:** least-privilege auth works across the approved boundary, rejected access is demonstrated, names match the pinned implementation, and credential lifecycle is assigned.

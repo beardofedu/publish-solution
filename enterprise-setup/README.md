@@ -6,17 +6,24 @@ The toolkit coordinates evidence and review. It does not provision your enterpri
 
 ## Start with installation; sign off workload readiness separately
 
-Follow the **[rendered enterprise installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html)** ([local source](../docs/setup.html)) for ordered UI steps from a customer-owned hub to a citizen developer's first generated plan, including authentication, optional guide hosting, each new repository and ongoing operations. It reuses this runbook for detailed evidence and approvals rather than introducing a competing checklist.
+Follow the **[rendered installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html#scope)** for UI steps, repository onboarding, and operations. Use this runbook for evidence and approvals, not a second installation procedure.
 
-An **issue-generation installation pilot** needs hub Actions, target access/Issues, credentials and policy, but no target toolkit workflow, Azure resources/credentials or Copilot seat. It is successful when the correct parent/control issues are created idempotently and validation reports honest gaps. Record that limited scope in the existing sign-off record; do not mark unexecuted workload tests as passed.
+An **installation pilot** proves issue generation and repeatable reruns, not workload readiness. It needs hub Actions, target access/Issues, credentials, and policy; no target toolkit workflow, Azure resources/credentials, or Copilot seat. Validation must report honest gaps.
 
-The [optional preview-first bootstrap](../SETUP.md#optional-preview-first-bootstrap) reduces repetitive label setup and prints configuration proposals for review; the fully manual walkthrough remains supported. `npm run bootstrap -- --repo contoso/publish-solution` reads hub diagnostics with hub-only credentials and makes no local/remote writes. Mutations require selected `--labels`/`--pages` plus `--apply`; configuration/App scope/secrets and enterprise gates remain manual. Pages creation is restricted to explicitly acknowledged public sites with verified prerequisites; private/internal or existing settings stay manual/unchanged. Static and live `npm run preflight` remain read-only. Fixture tests are not a live bootstrap pilot or launch evidence.
+The [optional bootstrap reference](../SETUP.md#optional-preview-first-bootstrap) covers hub-only previews, explicit apply permissions, and public-only Pages creation. Manual installation remains supported. Preflight is read-only; fixture tests are not live evidence.
 
-The gates below address **broader enterprise service/workload launch readiness**. Azure gate 4 and cloud pilot tests apply when preparing a workload deployment, not as an installer for the intake service. Pages is optional when an approved alternative guide host is used. The stock Azure-specific validator can still block workload readiness until implemented requirements or an approved, tested detector adaptation are satisfied.
+**Path A is the default:** evidence handoff to independent platform deployment. Paths B/C are reference-only. The stock Azure-specific check still blocks workload readiness until satisfied or replaced by a reviewed, tested detector; a separate risk decision never produces an automated PASS.
 
 ## Complete these gates in order
 
-Copy [the sign-off record](sign-off.md) into your internal change-management system or a restricted readiness issue. Replace every `<placeholder>`. Check a task only after attaching evidence. A blocked prerequisite blocks later gates; an exception needs a named risk owner, compensating control, expiry and retest.
+Choose a scope in [the sign-off record](sign-off.md#review-scope) before checking gates. Copy it into a restricted internal record; replace placeholders and attach evidence. A blocked prerequisite blocks dependent work. Exceptions need a named risk owner, compensating control, expiry, and retest; unexecuted tests stay unverified.
+
+| Scope | Applicable evidence |
+|---|---|
+| Installation-only | Gate 1 hub hosting/policies; gate 2 issue-generation credentials; gate 3 protection of trusted hub code; gate 5 guide audience if hosting is selected; gate 6 intake operations; gate 7 installation tests. Record exact subsections and test assertions, not blanket gate passes. |
+| Workload/service launch | All seven gates for the approved workload/host/auth scope, including solution security, cloud deployment, and separate human approvals. Pages is optional with an approved alternative; Copilot policy applies when Copilot is used. |
+
+Gate 4/cloud tests are not installation prerequisites. Their workload status remains **unverified**, not passed or waived, after an installation-only pilot.
 
 | Gate | Owner accountable for completion | Instructions | Exit evidence |
 |---|---|---|---|
@@ -32,9 +39,7 @@ For a non-Azure deployment, replace gate 4 with the equivalent cloud platform ev
 
 ## Read alongside the implementation
 
-The implementation's [SETUP.md](../SETUP.md) is authoritative for workflow input names and installation commands; [CUSTOMIZING.md](../CUSTOMIZING.md) for supported customization; [README.md](../README.md) and the [guide site](../docs/) for the user journey. Review the actual [workflows](../.github/workflows/), [scripts](../scripts/), [repository access policy](../config/policy.yml), [tier configuration](../config/tiers.yml), [control catalog](../controls/) and [request form](../.github/ISSUE_TEMPLATE/request-publication.yml) at the **same commit you deploy**.
-
-This directory deliberately does not replace those files. Freeze the deployed commit in the sign-off record. If these linked files are absent from your checkout, install the toolkit implementation before executing this checklist; documentation alone is not a runnable deployment.
+Use [SETUP.md](../SETUP.md#2-choose-target-authentication) for exact permissions/names, [CUSTOMIZING.md](../CUSTOMIZING.md#control-schema) for supported schema, and the [guide](https://beardofedu.github.io/publish-solution/) for the user journey. Review workflows, scripts, policy, catalog, and form at the **deployed commit** recorded in sign-off. Documentation alone is not an installation.
 
 ## Deployment scope and documentation currency
 

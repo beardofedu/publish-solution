@@ -4,6 +4,18 @@
 
 Copy this template to an **internal, appropriately restricted** issue or change record. Never fill it with secret values, private keys, access tokens or raw JWTs. Link to restricted evidence when this document is kept in a broader-audience repository.
 
+## Review scope
+
+Select **installation-only** or **workload/service launch**, then record exact gate subsections and pilot assertions. Use `Passed`, `Failed`, `Unverified`, or `Not applicable (reason)`. A partial gate is not a full pass; an unexecuted workload test stays **Unverified**.
+
+| Scope field | Value |
+|---|---|
+| Review type | `<installation-only / workload-service launch>` |
+| Applicable assertions / exclusions and reasons | `<gate subsections and Pxx I/W assertions>` |
+| Installation outcome, if installation-only | `<accepted for issue generation / blocked; evidence and named approver/date>` |
+
+Installation acceptance does **not** authorize workload go-live. Leave the workload final decision below **not evaluated** until its mandatory gates have evidence. See [scope guidance](README.md#complete-these-gates-in-order).
+
 ## Deployment identity
 
 | Field | Value |
@@ -30,7 +42,7 @@ Copy this template to an **internal, appropriately restricted** issue or change 
 
 ## Ordered readiness checklist
 
-Each owner checks their row only after evidence is attached. Approver must record name, role and date; a checked box alone is not approval.
+Check a row only when **all applicable assertions** are evidenced. For partial installation scope, record tested subsections and unverified workload assertions in Evidence; do not check the full gate. Approvers record name, role, and date.
 
 | Done | Gate | Evidence | Accountable owner | Approver(s) / date |
 |---|---|---|---|---|
@@ -44,9 +56,9 @@ Each owner checks their row only after evidence is attached. Approver must recor
 
 ## Pilot evidence
 
-Copy one row per P01-P18; add individual P06 prerequisite results and host variants.
+Copy one row per applicable P01-P18 **assertion**, splitting I/W rows and each P06 prerequisite/host variant. List unexecuted workload assertions as Unverified; fixtures never count as live results.
 
-| Test ID / host / tier / auth path | Expected result | Actual result | Run/issue/evidence URL | Tester / date | Pass / fail / approved exception |
+| Test ID + I/W assertion / host / tier / auth | Expected result | Actual result | Run/issue/evidence URL | Tester / date | Passed / Failed / Unverified / Not applicable + reason |
 |---|---|---|---|---|---|
 | `<Pxx>` | `<expected>` | `<observed>` | `<link>` | `<name/date>` | `<status>` |
 
@@ -59,6 +71,8 @@ Use `None` explicitly when there are no exceptions. A required feature that cann
 | `<ID or None>` | `<risk>` | `<control>` | `<name/date>` | `<date/owner/test>` |
 
 ## Final decision
+
+**Workload/service launch only.** For installation-only review, record `Not evaluated - installation-only` here and complete the installation outcome above. An accepted manual exception is a separate risk record, not a PASS for a failed/unknown automated check.
 
 - [ ] **Go:** all mandatory gates are evidenced, scope is explicit, residual risks are accepted by the appropriate owner, and no no-go condition remains.
 - [ ] **No-go:** rollout remains paused; blockers have owners and a retest date.

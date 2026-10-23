@@ -18,15 +18,20 @@ Source: [Deploy Azure landing zones](https://learn.microsoft.com/en-us/azure/arc
 
 ## 2. Create a scoped OIDC deployment identity
 
-1. Obtain Entra administrator approval and register an application with a service principal for the workload/environment. Record tenant ID, application/client ID and service-principal object ID distinctly. A user-assigned managed identity with federation is an alternative when approved.
+1. Obtain Entra administrator approval for the workload/environment identity: application/service principal or approved federated user-assigned managed identity. Record tenant, application/client, and service-principal object IDs distinctly.
 2. Assign the narrow deployment role at the required resource-group/resource scope. Do not default to subscription Owner, directory-wide permissions or role-assignment rights. Provision privileged IAM changes separately.
 3. Add a federated identity credential with the **exact** GitHub issuer, subject and audience used by the protected deployment job. Use `api://AzureADTokenExchange` for the normal Azure Login audience unless the approved cloud/action configuration requires otherwise.
-4. Configure the solution workflow's exact Azure input secret/variable names. Standard examples use `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID`; these identifiers are not an Azure client password. Match whether the workflow reads `secrets` or `vars`; do not create an unused variable.
+4. Match exact workflow inputs and `secrets`/`vars` scope. Standard names are `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`; these are identifiers, not a client password.
 5. Set `permissions: contents: read` and `id-token: write` on the deployment job as needed and use a reviewed/pinned Azure Login action. OIDC permission lets the job request a token; Azure RBAC still controls resource access.
 6. Bind the job to the intended protected GitHub environment. Require approved reviewers, prevent self-review where required and supported, restrict deployment branches/tags and decide whether administrator bypass is allowed. Separate sandbox and production identities/trusts.
 7. Prove token exchange and an authorized sandbox action. Test rejection from the wrong repository, branch/environment and unauthorized PR context. Inspect only necessary non-secret claim metadata; never print the bearer JWT or Azure access token in logs.
 
 ### Do not copy an outdated subject or the wrong host's issuer
+
+Verify the **effective** issuer, audience, and subject for the actual protected job, including case, encoding, immutable IDs, and custom templates. Never log raw bearer tokens. The following are reference formats, not values to copy.
+
+<details>
+<summary>Host and date-dependent claim formats</summary>
 
 | Host | Issuer baseline to verify |
 |---|---|
@@ -46,7 +51,9 @@ Immutable example (replace both names AND numeric IDs):
 repo:ORG@123456/REPO@456789:ref:refs/heads/main
 ```
 
-When a job uses an environment, its default subject context is the environment rather than the branch (for example, the earlier form `repo:ORG/REPO:environment:production`). Obtain the actual effective subject, including immutable IDs, encoding and any custom claim template, before creating federation. An environment-based subject alone does not restrict branches; enforce branch rules on the environment. Recheck trusts after repository/environment renames, transfers and OIDC policy changes.
+With an environment, the default subject uses environment context rather than branch, e.g. the earlier `repo:ORG/REPO:environment:production`. **Enforce branch rules on the environment**; that subject alone does not restrict branches. Recheck trusts after renames, transfers, or OIDC policy changes.
+
+</details>
 
 Sources: [GitHub OIDC in Azure](https://docs.github.com/en/enterprise-cloud@latest/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-azure); [OIDC reference: claims, immutable subjects and GHE.com substitutions](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/security/oidc); [Microsoft: authenticate from GitHub Actions with OIDC](https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure-openid-connect).
 
@@ -58,7 +65,7 @@ Sources: [GitHub OIDC in Azure](https://docs.github.com/en/enterprise-cloud@late
 - [ ] Test positive and negative Key Vault access as the **runtime identity**. A deployer being able to read a secret is not proof the app can, and should not be required by default.
 - [ ] Record inventory and rotation for external service credentials that cannot use managed identity.
 
-A vault-backed **sign-only** App key design is stronger than an exportable Actions PEM, but it requires a supported signing integration. The standard App-token action cannot automatically use a non-exportable Key Vault key merely because a vault exists. Treat this as a separately designed change, not an undocumented prerequisite.
+Optional advanced design: a vault-backed **sign-only** App key needs a separate supported signing integration. The standard App-token action cannot use a non-exportable Key Vault key automatically; it is not an installation prerequisite.
 
 Sources: [Managed identities overview](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview); [Key Vault RBAC](https://learn.microsoft.com/en-us/azure/key-vault/general/rbac-guide); [GitHub App private-key storage](https://docs.github.com/en/enterprise-cloud@latest/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).
 
