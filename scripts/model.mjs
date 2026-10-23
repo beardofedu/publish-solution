@@ -85,6 +85,9 @@ export async function loadConfig(root = process.cwd()) {
   const tierConfig = await yaml('config/tiers.yml');
   const workPackages = await yaml('config/work-packages.yml');
   if (!Array.isArray(policy.allowed_repositories) ||
+      (policy.onboarding_prs !== undefined && typeof policy.onboarding_prs !== 'boolean') ||
+      ((policy.onboarding_prs || policy.onboarding_installation_id !== undefined) &&
+        (!Number.isSafeInteger(policy.onboarding_installation_id) || policy.onboarding_installation_id < 1)) ||
       policy.allowed_repositories.some(repo => !repositoryPattern.test(repo)) ||
       new Set(policy.allowed_repositories.map(repo => repo.toLowerCase())).size !== policy.allowed_repositories.length ||
       !Array.isArray(policy.requester_permissions) || !policy.requester_permissions.length ||

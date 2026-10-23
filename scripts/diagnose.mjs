@@ -11,7 +11,7 @@ export function staticDiagnostics(config, hub, targets = config.policy.allowed_r
     config.policy.allowed_repositories.length
       ? green({ name: 'Target allowlist', detail: `${config.policy.allowed_repositories.length} exact target(s) configured.` })
       : red({ name: 'Target allowlist', detail: 'Empty by design; no target can be processed until an exact owner/name is reviewed into config/policy.yml.' }),
-    green({ name: 'Workflow permissions', detail: 'Bundled workflows request contents:read and issues:write. Cross-repository administration/code-scanning reads depend on separate target credentials and feature access.' }),
+    green({ name: 'Workflow permissions', detail: 'Publication uses contents:read and issues:write. The hub-only onboarding job additionally requests contents:write and pull-requests:write for reviewed policy PRs. Target reads depend on separate credentials.' }),
     amber({ name: 'Credentials', detail: 'Static mode cannot inspect Actions secret/variable visibility, secret values, token validity, or App installation scope.' }),
   ];
   if (hub && !repositoryPattern.test(hub)) results.push(red({ name: 'Governance repository', detail: 'GITHUB_REPOSITORY must be owner/name.' }));
@@ -41,7 +41,7 @@ export async function listActionItems(api, path, property) {
   }
 }
 
-async function liveDiagnostics(config, hub, targets, env) {
+export async function liveDiagnostics(config, hub, targets, env) {
   if (!hub || !repositoryPattern.test(hub)) throw new Error('Live mode requires GITHUB_REPOSITORY=owner/name.');
   if (!env.HUB_TOKEN) throw new Error('Live mode requires HUB_TOKEN through an approved secret mechanism; no token value is printed.');
   const results = [];
@@ -53,6 +53,18 @@ async function liveDiagnostics(config, hub, targets, env) {
   } catch (error) {
     results.push(red({ name: 'Governance repository access', detail: error.message }));
     return results;
+  }
+  if (config.policy.onboarding_prs) {
+    try {
+      const permissions = await hubApi.request('GET', `/repos/${hub}/actions/permissions/workflow`);
+      results.push(permissions.can_approve_pull_request_reviews === true
+        ? green({ name: 'Onboarding PR creation policy', detail: 'Actions PR creation/approval setting is enabled; this does not grant PR approval authority to onboarding code.' })
+        : amber({ name: 'Onboarding PR creation policy', detail: permissions.can_approve_pull_request_reviews === false
+          ? 'Enable Allow GitHub Actions to create and approve pull requests if policy permits; onboarding falls back to comment-only.'
+          : 'PR creation setting is unknown; inspect Actions settings before enabling automatic onboarding PRs.' }));
+    } catch (error) {
+      results.push(amber({ name: 'Onboarding PR creation policy', detail: `${error.message} Setting is unknown; onboarding falls back to comment-only on permission denial.` }));
+    }
   }
   let variables;
   let secrets;
@@ -125,8 +137,14 @@ async function liveDiagnostics(config, hub, targets, env) {
     return results;
   }
   const targetApi = new GitHub(env.SOLUTION_TOKEN, env.GITHUB_API_URL);
+  results.push(...await targetDiagnostics(targetApi,
+    targets.filter(target => allowed.includes(target.toLowerCase()) && target.toLowerCase() !== hub.toLowerCase())));
+  return results;
+}
+
+export async function targetDiagnostics(targetApi, targets) {
+  const results = [];
   for (const target of targets) {
-    if (!allowed.includes(target.toLowerCase()) || target.toLowerCase() === hub.toLowerCase()) continue;
     try {
       const repo = await targetApi.request('GET', `/repos/${target}`);
       if (repo.archived || repo.disabled || !repo.has_issues) {

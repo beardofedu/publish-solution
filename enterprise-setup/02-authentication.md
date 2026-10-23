@@ -28,6 +28,8 @@ Sources: [Registering a GitHub App](https://docs.github.com/en/enterprise-cloud@
 - [ ] Generate an App private key. Save the PEM only in approved secure storage and the GitHub Actions secret consumed by the implementation; never commit it, paste it into issues, or include it in a screenshot.
 - [ ] Configure the [exact App variables/key](../SETUP.md#recommended-github-app) in the hub. Record the App ID (not installation/client ID), installation owner, and repository **names only**, without `owner/`. Installation selection, token list, and policy allowlist must match.
 - [ ] Verify empty, missing, or extra repository names fail before token creation. Do not rely on the token action's broader empty-list behavior.
+- [ ] Verify installation-wide parity, including an extra selected repo and an "All repositories" installation. The Actions guard uses the existing App key to mint/revoke a temporary Metadata read-only token for full enumeration before minting the scoped publication token. API uncertainty/revocation failure blocks processing; no installation access is granted.
+- [ ] If opting in to `onboarding_prs: true`, approve the hub-only job's `contents: write`, `issues: write`, `pull-requests: write` and the Actions PR-creation setting. No PR approval/merge or admin/PAT credential is added. Keep installation grants human; follow [new-repository onboarding](../SETUP.md#onboard-each-new-repository).
 - [ ] Prefer a repository secret in the intake repo, or a selected-repository organization secret restricted to intake. Do not distribute the App key to solution repos.
 - [ ] Confirm the workflow references the credential's actual scope. An environment secret is unavailable unless the job targets that environment; adding environment approval can also intentionally pause automated intake.
 - [ ] Disable/remove the unused PAT alternative so an unexpected auth fallback cannot hide a broken App setup.
@@ -66,6 +68,7 @@ Use [SETUP.md](../SETUP.md#recommended-github-app) as the naming contract and ve
 | App PEM secret | `SOLUTION_APP_PRIVATE_KEY` | Intake Actions secret or selected-repo org secret | `<owner>` | `<link/date>` |
 | PAT secret, if exception approved | `SOLUTION_REPO_TOKEN` | Intake Actions secret; App ID unset | `<owner>` | `<expiry/exception or not configured>` |
 | Repository/requester boundary | `allowed_repositories`, `requester_permissions` | `config/policy.yml` | `<owner>` | `<reviewed PR>` |
+| Onboarding PR opt-in/settings link | `onboarding_prs` (default `false`), `onboarding_installation_id` (required when enabled; from Configure URL) | `config/policy.yml`; hub Actions PR-creation setting | `<owner>` | `<reviewed PR/setting evidence>` |
 | Guide/scan freshness policy | `guide_url`, `scan_max_age_days` | `config/policy.yml`; stock freshness 30 days | `<owner>` | `<reviewed PR>` |
 | Request/tier/status labels | `publication-request`, `risk:low`, `risk:moderate`, `risk:high`, `ready-for-review`, `approved-for-production` | Intake repository; reconcile against scripts | `<owner>` | `<label inventory>` |
 | Pages environment | `github-pages` | Intake repository | `<owner>` | `<protection evidence>` |
@@ -73,12 +76,12 @@ Use [SETUP.md](../SETUP.md#recommended-github-app) as the naming contract and ve
 | Azure IDs, if consumed | `<exact workflow names>` | `<solution environment secrets/variables as implemented>` | `<cloud owner>` | `<link>` |
 
 - [ ] Confirm required labels exist or the documented automation creates them. Do not rename `ready-for-review` or `approved-for-production` without updating every producer, consumer and guide.
-- [ ] Before exposing the form, verify the [five required labels](../SETUP.md#1-prepare-a-repository) exist; automation creates risk/readiness labels. Review CI/Pages branch filters if the default branch is not `main`.
+- [ ] Before exposing the form, verify the [six required labels](../SETUP.md#1-prepare-a-repository), including advisory `onboarding-pending`, exist; automation creates risk/readiness labels. Review CI/Pages/onboarding branch filters if the default branch is not `main`.
 - [ ] Do not create a target control-label taxonomy expecting the stock automation to consume it: target control issue IDs use idempotency markers, not generated control labels. Preserve those markers.
 - [ ] Verify environment names, reviewer teams, deployment branch restrictions and secret references exactly match workflows. The intake/validation jobs should not accidentally depend on the `github-pages` environment or Azure production credentials.
 - [ ] Record workflow-token permissions separately from App permissions: configuring one does not configure the other.
 
-Stock runtime environment names `HUB_TOKEN` and `SOLUTION_TOKEN` are **not additional repository secrets**: the workflows map `HUB_TOKEN` from the hub `GITHUB_TOKEN` (`contents: read`, `issues: write`) and `SOLUTION_TOKEN` from the selected App/PAT path. Keep the two authority boundaries separate.
+Stock runtime environment names `HUB_TOKEN` and `SOLUTION_TOKEN` are **not additional repository secrets**: the workflows map `HUB_TOKEN` from the hub `GITHUB_TOKEN` and `SOLUTION_TOKEN` from the selected App/PAT path. Publication/validation use `contents: read`, `issues: write`; only hub-side onboarding additionally uses `contents: write`, `pull-requests: write` to propose policy PRs. That job receives no App key or target token. Keep the authority boundaries separate.
 
 For local bootstrap, `HUB_TOKEN` instead uses approved hub-only secure environment injection, not a new Actions secret; no `SOLUTION_TOKEN` is used. Follow the [bootstrap permission/proposal reference](../SETUP.md#bootstrap-permissions). Proposals never authorize targets or upload credentials; approved edits and installation scope remain manual.
 

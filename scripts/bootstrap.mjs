@@ -11,6 +11,7 @@ export const requiredLabels = [
   { name: 'reassessment-request', color: '8250df' },
   { name: 'control-exception', color: 'bf8700' },
   { name: 'decommission-request', color: '57606a' },
+  { name: 'onboarding-pending', color: 'bf8700' },
 ];
 
 export const usage = `Usage: npm run bootstrap -- --repo owner/hub [--labels] [--scaffold --guide-url https://approved.example/guide [--target owner/name]... [--app-id 123] [--app-owner owner]] [--pages] [--apply] [--acknowledge-public-pages]

@@ -8,9 +8,9 @@ For the ordered, role-based administrator journey, use the **[rendered enterpris
 
 Adopt a reviewed independent Git copy into a repository managed by the governance team; retain the license and record the upstream commit/update owner. Use private visibility if intake metadata is confidential, or internal only when enterprise-wide read access is acceptable. A public fork stays public and cannot independently change visibility; respect enterprise fork restrictions. Follow the walkthrough's bootstrap sequence to keep Actions/Pages from running before configuration review.
 
-The bundled workflows target GitHub.com, Node.js 22+, and the repository's trusted default branch. `ghe.com` and GHES need implemented, tested host-specific adaptations, not just an API URL change; see [deployment boundaries](enterprise-setup/README.md#deployment-scope-and-documentation-currency). If your default branch is not `main`, update `ci.yml` and `pages.yml`.
+The bundled workflows target GitHub.com, Node.js 22+, and the repository's trusted default branch. `ghe.com` and GHES need implemented, tested host-specific adaptations, not just an API URL change; see [deployment boundaries](enterprise-setup/README.md#deployment-scope-and-documentation-currency). If your default branch is not `main`, update `ci.yml`, `pages.yml`, and `onboarding.yml`.
 
-Enable Issues and Actions. Allow the workflow `GITHUB_TOKEN` to write issues; each workflow explicitly requests `contents: read` and `issues: write`. Protect the default branch and review changes to workflows, scripts, dependencies, controls, and policy. Never run target-repository code under the governance credentials.
+Enable Issues and Actions. Publication/validation jobs request `contents: read` and `issues: write`; only the hub-side onboarding job additionally requests `contents: write` and `pull-requests: write`. Protect the default branch and review changes to workflows, scripts, dependencies, controls, and policy. Never run target-repository code under the governance credentials.
 
 Create these labels before using the form, either with the [optional bootstrap](#optional-preview-first-bootstrap) or these fully manual commands (no force/overwrite):
 
@@ -20,6 +20,7 @@ gh label create approved-for-production --repo YOUR-ORG/YOUR-HUB --color 1a7f37
 gh label create reassessment-request --repo YOUR-ORG/YOUR-HUB --color 8250df
 gh label create control-exception --repo YOUR-ORG/YOUR-HUB --color bf8700
 gh label create decommission-request --repo YOUR-ORG/YOUR-HUB --color 57606a
+gh label create onboarding-pending --repo YOUR-ORG/YOUR-HUB --color bf8700
 ```
 
 Risk and readiness labels are created by the toolkit. Existing labels are preserved. Non-collaborators may submit a form, but only hub collaborators with `write`, `maintain`, or `admin` permission may start cross-repository processing. An automatic run from a non-collaborator will fail preflight; a maintainer should review the request and comment `/publish`.
@@ -72,7 +73,7 @@ Configure this **Actions secret**:
 | --- | --- |
 | `SOLUTION_APP_PRIVATE_KEY` | The App's PEM private key |
 
-The bundled workflows use `actions/create-github-app-token` to mint a short-lived installation token and revoke it in the action's post step. Before token creation, a local guard requires `SOLUTION_APP_REPOSITORIES` to exactly match the reviewed allowlist under one installation owner; it rejects blank, duplicated, prefixed, missing, or extra names. This list does not replace the App installation selection; the App installation, token list, and policy allowlist must all match.
+The bundled workflows use `actions/create-github-app-token` to mint a short-lived installation token and revoke it in the action's post step. Before that token is created, the scope guard requires `SOLUTION_APP_REPOSITORIES` to exactly match the reviewed allowlist under one installation owner; blank, duplicated, prefixed, missing, or extra names fail closed. In Actions, the guard also uses the existing App key to inspect that owner's active installation: **Only select repositories** is required, and its entire repository set must exactly match policy. To detect grants hidden by a narrowed token, it briefly creates an installation-wide **Metadata read-only** token, lists repositories, and revokes it in a `finally` block. It grants no access and performs no target writes. API uncertainty or revocation failure blocks publication; abruptly cancelled runners may leave this read-only token until expiry.
 
 ### Safe configuration preflight
 
@@ -119,6 +120,20 @@ scan_max_age_days: 30
 ```
 
 The empty default allowlist intentionally rejects all targets. Match each target in both the allowlist and the App installation/PAT selection. Targets must differ from the hub, be active, and have Issues enabled.
+
+### Onboard each new repository
+
+The default `onboarding_prs: false` keeps PR preparation manual. To opt in for App mode, review `onboarding_prs: true` and `onboarding_installation_id: 123` into `config/policy.yml`; replace `123` with the numeric ID from the intended App installation's **Configure URL**, not the App ID. This creates a direct settings link without giving the hub-side job App credentials. Enable **hub Settings > Actions > General > Workflow permissions > Allow GitHub Actions to create and approve pull requests**, if organization policy permits. This setting permits creation; the code never approves or merges PRs. Optional live preflight reports the setting when visible, otherwise marks it unknown.
+
+An authorized publication request (or maintainer `/publish`) for a non-allowlisted target gets an `onboarding-pending` label and an explanatory comment before any target token is minted. With opt-in enabled, the hub `GITHUB_TOKEN` creates one review PR per exact repository, preserving existing allowlist entries and linking each request. Repeats/edits link the same open PR. A closed previous PR or diverged recovery branch needs maintainer reconciliation, not an automatic duplicate. Only the configured installation owner is accepted. No admin/PAT credential is added.
+
+The admin reviews owner, visibility, active state and scope, follows the PR's installation-settings link to add the repo under **Only select repositories**, updates `SOLUTION_APP_REPOSITORIES` (names only, preserving existing targets), then reviews and merges the policy PR. Coordinate this change window: installation/variable changes before merge deliberately block existing runs until all three sets agree.
+
+**CI caveat:** PRs created by `GITHUB_TOKEN` do not trigger `pull_request` workflows. After reviewing the PR head, a maintainer uses **Actions > Toolkit checks > Run workflow**, selecting the exact `onboard/...` branch listed in the PR checklist. This read-only CI workflow supports manual dispatch and receives no App key/target token. Local alternative: run `npm ci --ignore-scripts`, `npm test`, `npm run check`, and `actionlint` on the PR head from an approved trusted checkout. Do not bypass required GitHub checks or add a privileged `pull_request_target` workflow to work around this limitation.
+
+After a human merge to `main`, **Repository onboarding checks** reruns the exact App scope guard and the existing target-read diagnostics. It comments on open pending requests and clears `onboarding-pending` only on success. Scope/token/API failures stay blocked with a request comment; fix the cause and use **Actions > Repository onboarding checks > Run workflow** to retry after variable/installation-only changes. It never auto-publishes: an authorized requester or maintainer resumes with `/publish`. A successful `/publish` also clears a leftover pending label. Labels remain advisory; publication still rechecks policy, permissions and scope.
+
+If PR creation is disabled, App mode is absent, or GitHub refuses PR creation (403/422), intake explicitly falls back to a comment-only manual review request. Other errors fail the run with a comment; resolve them before retrying. PAT-mode onboarding remains manual; the App-only post-merge check cannot prove PAT selection. Never give Actions a new admin credential to automate installation grants.
 
 Customize `config/tiers.yml` and `controls/*.yml` with your governance owners. Update the URLs in the issue form config and HTML pages when copying the repository. See [CUSTOMIZING.md](CUSTOMIZING.md).
 
@@ -212,7 +227,7 @@ npm run bootstrap -- --repo contoso/publish-solution --scaffold \
 | --- | --- |
 | Every invocation | Metadata read and Administration read for repository/Actions diagnostics; applicable caller access. No settings enabled or widened. |
 | Label preview | Issues read, including pagination. |
-| `--labels --apply` | Issues write. Creates only five missing form/approval labels, using the manual colors and no descriptions. Existing labels and custom metadata stay unchanged. |
+| `--labels --apply` | Issues write. Creates only the six missing form/approval/onboarding labels, using the manual colors and no descriptions. Existing labels and custom metadata stay unchanged. |
 | `--scaffold` | Common diagnostic reads only; no variables/secrets or target permission. |
 | `--pages` preview | Pages read; Contents and Actions read to verify a missing site's default-branch workflow. Existing sites are only read. |
 | `--pages --apply` | Pages write **and repository Administration write**, plus the reads above and hub administrator role. The role does not replace token permissions; organization administration is unnecessary. All [public-site prerequisites](#4-optionally-enable-pages) must pass, including `--acknowledge-public-pages`. |
@@ -230,7 +245,7 @@ Scaffolding prints policy fields, issue-chooser links, hub URL, and App variable
 
 | Result | Meaning / next action |
 | --- | --- |
-| `PLANNED`, `APPLIED`, `UNCHANGED`, `BLOCKED`, `MANUAL` | Per-operation status plus counts. A fresh label preview normally has five `PLANNED`, `APPLIED=0`. Reruns/upgrades create only missing labels; existing/concurrent labels/sites are preserved, not reconciled. |
+| `PLANNED`, `APPLIED`, `UNCHANGED`, `BLOCKED`, `MANUAL` | Per-operation status plus counts. A fresh label preview normally has six `PLANNED`, `APPLIED=0`. Reruns/upgrades create only missing labels; existing/concurrent labels/sites are preserved, not reconciled. |
 | Final static preflight | Checks the **current checkout**, not proposals. An empty allowlist remains a manual intake blocker, never automatic approval. Successful apply also verifies label/site existence through reads. |
 | Exit 0 | Selected operations completed or previewed, **not installation or workload readiness**. Static checks cannot prove secret validity, installation scope, target writes, or org/environment inheritance. Use [live preflight](#safe-configuration-preflight) and the separately authorized pilot. Fixtures are not live pilot evidence. |
 | Nonzero / partial apply | Requested API, authorization, prerequisite, or verification failure. Earlier `APPLIED` changes remain; no rollback/deletion. Inspect the cause, rerun preview, then narrowly reapply. |
