@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { GitHub, upsertComment } from './github.mjs';
-import { loadConfig, repositoryPattern } from './model.mjs';
+import { hasLabel, loadConfig, repositoryPattern } from './model.mjs';
 import { authorize, clearGate, intakeRequest, reportTag, validateRequest } from './publish.mjs';
 import { remindExceptions } from './lifecycle.mjs';
 
@@ -41,7 +41,7 @@ async function main() {
   }
   let failed = false;
   for (const issue of issues) {
-    if (!issue.labels.some(label => label.name === 'publication-request')) continue;
+    if (!hasLabel(issue, 'publication-request')) continue;
     try {
       const args = { hubApi, targetApi, hub, issue, config };
       if (mode === 'intake') await intakeRequest(args);

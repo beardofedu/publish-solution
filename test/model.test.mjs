@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, cp, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { controlBody, deriveTier, fields, fingerprint, loadConfig, marker, parseIntake, planIssues } from '../scripts/model.mjs';
+import { controlBody, deriveTier, fields, fingerprint, hasLabel, loadConfig, marker, parseIntake, planIssues } from '../scripts/model.mjs';
 
 export const answers = {
   repository: 'Example/Solution', business: 'business-team', technical: 'platform-team',
@@ -13,6 +13,15 @@ export const answers = {
 export function form(values = {}) {
   return Object.entries({ ...answers, ...values }).map(([key, value]) => `### ${fields[key]}\n\n${value}`).join('\n\n');
 }
+
+test('label matching is case-insensitive and does not mutate preserved labels', () => {
+  const issue = { labels: [{ name: 'Publication-Request' }] };
+  assert.equal(hasLabel(issue, 'publication-request'), true);
+  assert.equal(hasLabel(issue, 'reassessment-request'), false);
+  assert.equal(hasLabel({ labels: [{ name: null }] }, 'publication-request'), false);
+  assert.equal(hasLabel({}, 'publication-request'), false);
+  assert.equal(issue.labels[0].name, 'Publication-Request');
+});
 
 test('intake accepts the issue form and normalizes repository case and CRLF', () => {
   const parsed = parseIntake(form().replaceAll('\n', '\r\n'));
