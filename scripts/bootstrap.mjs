@@ -202,9 +202,9 @@ export async function bootstrap(options, { config, api }) {
         else {
           // Re-read immediately before creation; never PUT/PATCH an existing site.
           const latest = await api.request('GET', path);
-          await pagesPrerequisites(api, path, latest, await api.request('GET', `${path}/actions/permissions`), options);
           if (await readPages(api, path)) add('UNCHANGED', 'Pages appeared concurrently; preserved without changes.');
           else {
+            await pagesPrerequisites(api, path, latest, await api.request('GET', `${path}/actions/permissions`), options);
             try {
               await api.request('POST', `${path}/pages`, { build_type: 'workflow', public: true });
               add('APPLIED', 'Created public workflow-based Pages configuration; no deployment dispatched.');
