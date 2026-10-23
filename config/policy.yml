@@ -1,6 +1,10 @@
 # Keep this list narrow. An owner match alone is NOT enough: each target must
 # be explicitly listed before this privileged automation will write to it.
 allowed_repositories: []
+# Opt in to hub-only review PRs; App installation grants always remain manual.
+onboarding_prs: false
+# To enable PRs, also set onboarding_installation_id to the numeric ID from the
+# reviewed App installation's Configure URL (not the App ID).
 # Example: [contoso/expense-helper, contoso/team-dashboard]
 guide_url: https://beardofedu.github.io/publish-solution
 # These hub permissions may trigger /publish and /validate.

@@ -153,7 +153,7 @@ test('labels apply is idempotent and preserves customizations/unrelated labels a
   const first = await bootstrap(args('--labels', '--apply'), { config, api: mock.api });
   assert.equal(first.failed, false);
   assert.deepEqual(mock.labels.slice(0, 101), labels);
-  assert.equal(mock.calls.filter(call => call.method === 'POST').length, 4);
+  assert.equal(mock.calls.filter(call => call.method === 'POST').length, requiredLabels.length - 1);
   assert(mock.calls.some(call => call.path.endsWith('page=2')));
   assert(mock.calls.filter(call => call.method !== 'GET').every(call => call.path === `${hub}/labels`));
   const count = mock.calls.length;

@@ -1,0 +1,54 @@
+name: Repository onboarding checks
+on:
+  push:
+    branches: [main]
+    paths: [config/policy.yml]
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: publish-solution-mutations
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify exact App installation and policy scope
+        id: scope
+        run: |
+          test -n "$SOLUTION_APP_ID"
+          node scripts/guard-app-scope.mjs
+        env:
+          SOLUTION_APP_ID: ${{ vars.SOLUTION_APP_ID }}
+          SOLUTION_APP_OWNER: ${{ vars.SOLUTION_APP_OWNER }}
+          SOLUTION_APP_REPOSITORIES: ${{ vars.SOLUTION_APP_REPOSITORIES }}
+          SOLUTION_APP_PRIVATE_KEY: ${{ secrets.SOLUTION_APP_PRIVATE_KEY }}
+      - name: Create scoped installation token
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SOLUTION_APP_ID }}
+          private-key: ${{ secrets.SOLUTION_APP_PRIVATE_KEY }}
+          owner: ${{ vars.SOLUTION_APP_OWNER || github.repository_owner }}
+          repositories: ${{ vars.SOLUTION_APP_REPOSITORIES }}
+      - name: Report diagnostics to pending requests
+        if: ${{ !cancelled() && steps.scope.outcome != 'skipped' }}
+        run: node scripts/onboarding.mjs check
+        env:
+          HUB_TOKEN: ${{ github.token }}
+          SOLUTION_TOKEN: ${{ steps.app.outputs.token }}
+          SOLUTION_APP_OWNER: ${{ vars.SOLUTION_APP_OWNER }}
+          SCOPE_OUTCOME: ${{ steps.scope.outcome }}
+          TOKEN_OUTCOME: ${{ steps.app.outcome }}

@@ -111,6 +111,17 @@ test('catalog rejects malformed controls and policy; tier precedence is normaliz
     await writeFile(join(directory, 'config/tiers.yml'), `default: Low\nrules:\n  - tier: Moderate\n    any:\n      ai: [Yes]\n  - tier: High\n    any:\n      exposure: [External]\n`);
     const config = await loadConfig(directory);
     assert.equal(deriveTier({ ...answers, exposure: 'External', ai: 'Yes' }, config.tierConfig), 'High');
+    const policyPath = join(directory, 'config/policy.yml');
+    const policy = await readFile(policyPath, 'utf8');
+    await writeFile(policyPath, JSON.stringify({ ...config.policy, onboarding_prs: 'true' }));
+    await assert.rejects(loadConfig(directory), /Invalid config/);
+    const policyWithoutInstallation = { ...config.policy, onboarding_prs: true };
+    delete policyWithoutInstallation.onboarding_installation_id;
+    await writeFile(policyPath, JSON.stringify(policyWithoutInstallation));
+    await assert.rejects(loadConfig(directory), /Invalid config/);
+    await writeFile(policyPath, JSON.stringify({ ...config.policy, onboarding_prs: true, onboarding_installation_id: 123 }));
+    assert.equal((await loadConfig(directory)).policy.onboarding_installation_id, 123);
+    await writeFile(policyPath, policy);
     await writeFile(join(directory, 'controls/bad.yml'), 'id: broken\ntiers: [Low]\n');
     await assert.rejects(loadConfig(directory), /Invalid control/);
     const missingId = { ...config.catalog[0] };

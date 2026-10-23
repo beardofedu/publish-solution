@@ -41,6 +41,7 @@ jobs:
           SOLUTION_APP_ID: ${{ vars.SOLUTION_APP_ID }}
           SOLUTION_APP_OWNER: ${{ vars.SOLUTION_APP_OWNER }}
           SOLUTION_APP_REPOSITORIES: ${{ vars.SOLUTION_APP_REPOSITORIES }}
+          SOLUTION_APP_PRIVATE_KEY: ${{ secrets.SOLUTION_APP_PRIVATE_KEY }}
       - name: Create installation token (recommended)
         if: vars.SOLUTION_APP_ID != ''
         id: app

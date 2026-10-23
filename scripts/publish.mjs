@@ -138,7 +138,7 @@ export async function intakeRequest({ hubApi, targetApi, hub, issue, config }) {
   await upsertComment(hubApi, hub, issue.number, stateTag,
     `<!-- state-json:${JSON.stringify(state)} -->\n## Publication plan: ${tier}\n\n[Parent tracking issue](${parent.html_url})\n\n${checklist.join('\n')}\n\n${warnings.join('\n')}\n\nWhen evidence is complete, ask a maintainer to comment \`/validate\`. Changes to intake or catalog require \`/publish\` again and reopen required controls.`);
   await setLabels(hubApi, hub, issue.number, [`risk:${tier.toLowerCase()}`, 'publication-request'],
-    tiers.filter(value => value !== tier).map(value => `risk:${value.toLowerCase()}`));
+    [...tiers.filter(value => value !== tier).map(value => `risk:${value.toLowerCase()}`), 'onboarding-pending']);
   return { parent, plans, tier, warnings };
 }
 

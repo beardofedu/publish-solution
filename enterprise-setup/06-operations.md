@@ -22,6 +22,7 @@ Sources: [Cloud audit-log streaming](https://docs.github.com/en/enterprise-cloud
 |---|---|---|---|
 | Intake/validation failure, cancellation, stuck queue | Distinguish input error, policy denial, auth and platform outage; notify requester without claiming readiness | `<queue>` | `<time/dashboard>` |
 | No parent/control issues after accepted request | Correlate request with run, inspect partial creation, retry idempotently | `<queue>` | `<time/query>` |
+| `onboarding-pending` / onboarding PR or scope failure | Review the linked policy PR and human App grant; reconcile installation, variable and allowlist. Run PR-head checks explicitly (bot PRs do not trigger PR CI); merge after review, rerun Repository onboarding checks, then authorize `/publish`. No admin token or label-only bypass | `<platform queue>` | `<SLA/request/PR/run>` |
 | Missing security metadata / API 401, 403, 404, 429 | Block readiness; inspect entitlement, App scope, permissions, host/version and rate limit; bounded retry only for transient failures | `<queue>` | `<time/runbook>` |
 | App key/PAT compromise or unexpected installation | Suspend/revoke affected access, contain workflows, investigate mutations and rotate | `<security on-call>` | `<incident process>` |
 | Security settings/rulesets/bypasses/reviewers or Actions/Pages policy drift | Restore approved baseline and reassess affected approvals | `<security/platform>` | `<cadence/alert>` |
@@ -32,7 +33,8 @@ Sources: [Cloud audit-log streaming](https://docs.github.com/en/enterprise-cloud
 ## 2. Practice safe recovery
 
 - [ ] For partial intake, inspect issue IDs, stable rerun markers, and bot state; an authorized hub collaborator reruns `/publish`. Never delete evidence or edit markers to start over.
-- [ ] Preserve shared intake/validation concurrency and `cancel-in-progress: false`. Let active intake finish; reconcile commands displaced from the pending queue during bursts.
+- [ ] Preserve shared intake/validation/onboarding concurrency and `cancel-in-progress: false`. Let active intake finish; reconcile commands displaced from the pending queue during bursts.
+- [ ] For onboarding, a 403/422 PR-creation refusal is a visible comment-only fallback. Reconcile closed PRs or diverged recovery branches manually; do not manufacture duplicate approvals. Coordinate installation/variable changes and policy merge, since mismatch blocks existing runs. Variable-only fixes need a manual **Repository onboarding checks** rerun; success clears the advisory label but never auto-publishes.
 - [ ] For validation failure, preserve run evidence and correct the cause. Never close issues, remove security controls or grant broader credentials solely to get a green run.
 - [ ] Define launch rollback: close/pause new intake, disable affected privileged workflows, suspend credentials if needed, announce the outage and retain existing issues/evidence. Roll back code/config through a reviewed commit, not destructive history rewrites.
 - [ ] Restore from a known-good pinned release and reconcile in-flight requests, label state and catalog version. Retest before reopening intake; a code rollback alone does not undo created issues or cloud changes.

@@ -167,6 +167,10 @@ test('workflows remain gated to publication requests; labels and runbooks cover 
   const runner = await readFile('scripts/run.mjs', 'utf8');
   assert(runner.includes('state=open&labels=publication-request'));
   const setup = await readFile('SETUP.md', 'utf8');
+  const bootstrap = await readFile('scripts/bootstrap.mjs', 'utf8');
+  assert(setup.includes('gh label create onboarding-pending '));
+  assert(bootstrap.includes("name: 'onboarding-pending'"));
+  assert(!((await form('request-publication')).labels.includes('onboarding-pending')));
   const guide = await readFile('docs/requests.html', 'utf8');
   for (const label of ['reassessment-request', 'control-exception', 'decommission-request']) {
     assert(setup.includes(`gh label create ${label} `));

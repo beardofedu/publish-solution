@@ -15,7 +15,7 @@ A public, adaptable toolkit for citizen developers turning AI-built prototypes i
 ## How it works
 
 1. Open **Request publication** with the solution repository, owner team aliases, data classification, exposure, audience, runtime AI usage, integrations, and hosting.
-2. A governance maintainer allowlists the exact target repository and authorizes intake with `/publish` (authorized collaborators' issue events also trigger it).
+2. A governance maintainer authorizes intake with `/publish` (authorized collaborators' issue events also trigger it). New targets wait for [repository onboarding](SETUP.md#onboard-each-new-repository): optional hub-generated policy PR, human App grant, reviewed merge and scope checks.
 3. The toolkit derives **Low / Moderate / High**, creates a parent plus individual control issues, attempts native sub-issue links, and comments back with the plan. Reruns reuse stable markers; a task-list fallback covers unavailable sub-issue APIs.
 4. Complete each required control with evidence and close it **as completed**. A maintainer comments `/validate` on the original request; daily checks also cover open requests.
 5. A passing report applies `ready-for-review`. A **human governance reviewer** inspects evidence and applies `approved-for-production`. Actual deployments still require independent production-environment protection.
@@ -40,7 +40,7 @@ The highest matching risk tier wins; see the [configurable tier guide](https://b
 | Surface | Purpose |
 | --- | --- |
 | `.github/ISSUE_TEMPLATE/` | Structured intake with public-data warning |
-| `.github/workflows/` | Intake, validation, daily sweep, CI, and Pages publication |
+| `.github/workflows/` | Intake, repository onboarding checks, validation, daily sweep, CI, and Pages publication |
 | `config/` | Exact target allowlist, trigger permissions, tier rules, and per-control role/dependency/evidence packages |
 | `controls/*.yml` | 14 control definitions covering ownership, repo hygiene, secrets, dependencies, code scanning, identity, data, AI, delivery, runtime, operations, resilience, and independent review |
 | `scripts/` | Node.js automation, optional preview-first bootstrap, read-only setup diagnostics, lifecycle reminders, API client, conservative detectors, catalog validation |
@@ -66,7 +66,7 @@ Node.js 22+ is required. CI also runs `actionlint`.
 
 **Optional installation helper:** preview hub setup with `npm run bootstrap -- --repo contoso/publish-solution` from your trusted checkout. The preview makes no writes; see [bootstrap permissions and explicit apply options](SETUP.md#optional-preview-first-bootstrap), including public-Pages restrictions. Manual installation remains supported.
 
-`npm run preflight` needs no credentials and makes no network calls or writes. [Optional live preflight](SETUP.md#safe-configuration-preflight) checks names and read access, not secret validity or write access. App workflows require the token's repository list to exactly match the reviewed allowlist for one installation owner.
+`npm run preflight` needs no credentials and makes no network calls or writes. [Optional live preflight](SETUP.md#safe-configuration-preflight) checks names and read access, not secret validity or write access. App workflows require the installation's selected repositories and token repository list to exactly match the reviewed allowlist for one owner.
 
 **Do not submit secrets, customer-specific information, personal data, or sensitive architecture to this public repository.** Organizations should use a private governance instance for confidential intakes and review their Pages publishing visibility.
 
