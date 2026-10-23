@@ -113,11 +113,13 @@ test('catalog rejects malformed controls and policy; tier precedence is normaliz
     assert.equal(deriveTier({ ...answers, exposure: 'External', ai: 'Yes' }, config.tierConfig), 'High');
     const policyPath = join(directory, 'config/policy.yml');
     const policy = await readFile(policyPath, 'utf8');
-    await writeFile(policyPath, policy.replace('onboarding_prs: false', 'onboarding_prs: "true"'));
+    await writeFile(policyPath, JSON.stringify({ ...config.policy, onboarding_prs: 'true' }));
     await assert.rejects(loadConfig(directory), /Invalid config/);
-    await writeFile(policyPath, policy.replace('onboarding_prs: false', 'onboarding_prs: true'));
+    const policyWithoutInstallation = { ...config.policy, onboarding_prs: true };
+    delete policyWithoutInstallation.onboarding_installation_id;
+    await writeFile(policyPath, JSON.stringify(policyWithoutInstallation));
     await assert.rejects(loadConfig(directory), /Invalid config/);
-    await writeFile(policyPath, policy.replace('onboarding_prs: false', 'onboarding_prs: true\nonboarding_installation_id: 123'));
+    await writeFile(policyPath, JSON.stringify({ ...config.policy, onboarding_prs: true, onboarding_installation_id: 123 }));
     assert.equal((await loadConfig(directory)).policy.onboarding_installation_id, 123);
     await writeFile(policyPath, policy);
     await writeFile(join(directory, 'controls/bad.yml'), 'id: broken\ntiers: [Low]\n');

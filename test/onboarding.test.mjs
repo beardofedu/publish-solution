@@ -136,6 +136,7 @@ test('invalid input gets a blocking comment with no branch or target credentials
 
 test('disabled PRs, PAT mode and permission refusals have explicit comment-only fallbacks', async () => {
   const config = await loadConfig();
+  config.policy.onboarding_prs = false;
   for (const overrides of [{ config }, { appId: '' }]) {
     const mock = fixture();
     assert.equal(await prepare(mock, overrides), false);

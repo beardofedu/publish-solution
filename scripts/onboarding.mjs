@@ -101,7 +101,9 @@ export async function prepareOnboarding({ api, hub, event, eventName, config, ow
   await clearGate(api, hub, issue.number);
   let repository;
   try {
-    repository = onboardingTarget(issue, hub, owner);
+    if (!repositoryPattern.test(hub ?? '')) throw new Error('GITHUB_REPOSITORY must be owner/name.');
+    repository = appId ? onboardingTarget(issue, hub, owner) : parseIntake(issue.body).repository;
+    if (repository === hub.toLowerCase()) throw new Error('The solution repository must differ from the governance repository.');
   } catch (error) {
     await upsertComment(api, hub, issue.number, tag, `## Repository onboarding blocked\n\n${error.message}\n\nCorrect the request and ask an authorized maintainer to retry \`/publish\`. No target credentials were minted.`);
     throw error;
