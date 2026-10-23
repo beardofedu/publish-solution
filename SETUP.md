@@ -26,54 +26,17 @@ Risk and readiness labels are created by the toolkit. Existing labels are preser
 
 Keep existing labels when upgrading; create only missing labels. Assign governance triage for `reassessment-request`, `control-exception`, and `decommission-request`. These are **manual** forms and must not also have `publication-request`: automation on a separate request number would create a separate publication plan. No App/PAT permission, secret, variable, or environment names change.
 
-### Optional preview-first bootstrap
-
-The manual installation remains fully supported. From the **trusted adopted hub checkout** with Node.js 22+, run `npm ci --ignore-scripts`, then use the optional script below. It supports **GitHub.com only**, rejects alternate `GITHUB_API_URL`/`GITHUB_SERVER_URL` destinations, and never reads a target repository. Supply `HUB_TOKEN` for **only the hub**, using your approved secret-manager/environment injection; do not put tokens in command arguments, shell history, files or logs. No target solution-repository credential is needed.
-
-```sh
-# Default: read-only hub diagnostics and missing-label preview; no local writes.
-npm run bootstrap -- --repo contoso/publish-solution
-
-# Explicit, narrowly selected mutation: create only missing required hub labels.
-npm run bootstrap -- --repo contoso/publish-solution --labels --apply
-
-# Print field proposals only, even when combined with --apply --labels.
-# Replace this example URL with the actual reviewed guide root.
-npm run bootstrap -- --repo contoso/publish-solution --scaffold \
-  --guide-url https://guide.example.org/publication \
-  --target contoso/team-helper --app-id 12345
-```
-
-`--labels`, `--scaffold` and `--pages` select operations; without selections, only labels are previewed alongside diagnostics. **Nothing mutates without both `--apply` and `--labels` and/or `--pages`.** `--apply` alone (or with only `--scaffold`) is an error. Use `--help` for syntax.
-
-| Operation | Hub-only token permissions / prerequisites |
-| --- | --- |
-| All invocations | Metadata read and Administration read for repository/Actions policy diagnostics; caller must have applicable repository access. No settings are enabled or widened. |
-| Default / `--labels` preview | Issues read to enumerate labels, including pagination. |
-| `--labels --apply` | Issues write; only five missing form/approval labels are created with the manual colors above. Manual setup specifies no descriptions, so none are invented; existing colors/descriptions and unrelated labels are untouched. |
-| `--scaffold` | Only the common diagnostic reads; no variables/secrets permission or target credential is needed. |
-| `--pages` preview | Pages read; Contents read and Actions read to verify a missing site's default-branch workflow. Existing sites are only read. |
-| `--pages --apply` | Pages write and repository Administration write token permissions, plus the reads above, a caller with the hub repository administrator role, public repository, enabled Actions, active manual-only Pages workflow, applicable org/plan approval, and explicit public acknowledgment below. The administrator role does not replace either token permission. Never grant organization administration just for this script. |
-
-The scaffolding output is a **review proposal, not an applied configuration or an overwrite-ready patch**: policy fields, issue-chooser guide links, hub URL, and App variable values. Existing allowlist entries and other policy fields are preserved in the proposal; additional `--target owner/name` entries are **not approved or saved**. `--app-owner` defaults to the hub owner; all proposed targets must belong to that one installation owner. The App repository-name variable is derived from the exact proposed list, never a wildcard. `--app-id` is optional and otherwise remains a manual placeholder. Keep the empty default allowlist until actual approval.
-
-Manually adapt the proposal into a protected PR and review customer hub/source links throughout HTML/Markdown, CODEOWNERS, branch filters and policy. The script **never writes local files**, so it cannot overwrite dirty/custom files, nor does it create commits or PRs. It never sets Actions variables, uploads secrets, creates/installs an App, authorizes targets, changes protections/team access/security licensing/enterprise policy, enables Issues/Actions, widens token permissions, provisions cloud resources, or dispatches a deployment. App installation scope, organization approval, secret storage and rotation stay in [section 2](#2-choose-target-authentication).
-
-Output uses `PLANNED`, `APPLIED`, `UNCHANGED`, `BLOCKED`, `MANUAL`, then a count summary. A fresh-hub label preview normally shows five `PLANNED` entries and `APPLIED=0`; an apply rerun shows existing labels as `UNCHANGED`. After selected operations it reuses **static preflight** against the current checkout, not the proposal; an empty allowlist is a clearly reported manual intake blocker, not a reason to auto-approve targets. Successful apply verifies labels/site existence with read-only requests. Exit 0 means the selected bootstrap operations completed/previewed, **not** that the installation or workload is ready. Requested API/prerequisite/authorization failures, failed verification and partial mutations exit nonzero; earlier `APPLIED` entries remain, with no rollback/deletion. Inspect the cause, rerun preview, then narrowly reapply. Concurrent existing labels/sites are preserved; label reruns and upstream upgrades create only missing required labels and never reconcile custom metadata.
-
-403/404 may mean hidden access or policy, not absence. The script stops on diagnostic authorization failures rather than reporting success. Check hub-only token permissions, account/organization approvals, trusted checkout and destinations; do not broaden target credentials to repair hub bootstrap. Pages 404 is treated as ambiguous until the conservative prerequisites below are verified. Static verification cannot validate live secret values, installation scope, target write access, organization/environment variable inheritance, or workload readiness. Use read-only live preflight and the separate authorized synthetic pilot when appropriate. **No live bootstrap pilot is claimed by the fixture-backed tests.**
-
-The publication form now also requires a solution description (purpose and AI behavior), requested go-live date (`YYYY-MM-DD`), target environment (`dev`, `test`, `prod`), and three attestations. These are recorded **only in the source issue**, not parsed, copied into generated issues, used in tiering, or included in the plan fingerprint. Existing structured intake/risk fields and choices remain unchanged, and legacy requests remain compatible. Maintainers must check the metadata, real calendar date, and attestations before processing and approval: GitHub's form UI requirements do not validate later edits or direct API submissions. Dev/test never lowers the tier; a requested deadline never overrides review.
+The [optional bootstrap reference](#optional-preview-first-bootstrap) provides a missing-label preview and explicitly selected apply options. Manual installation remains supported.
 
 ### Lifecycle review process
 
 | Form / label | Governance action |
 | --- | --- |
-| Change or re-assessment / `reassessment-request` | Verify and cross-link the original request and same target repository; remove its readiness/approval while review is pending. Reopen the original if needed, update its structured risk answers and record the change, then comment `/publish` **on the original**. Automation re-tiers, reuses existing parent/controls, and creates only missing applicable controls; changed scope reopens required existing controls for fresh evidence. Complete controls, `/validate`, and obtain fresh human approval; record the result in the reassessment issue. A different target requires a new publication request. |
-| Control exception / `control-exception` | Verify the catalog control ID, affected issue, justification, compensating controls/evidence, real expiry date, and risk owner's authority. Assign a reviewer, record explicit approval/rejection and conditions, link the decision to the original/control issue, and arrange expiry review. The daily lifecycle sweep comments on tracked open or closed records that are due (within seven days), expired, or incomplete; it does not infer approval, renew, close controls, or bypass FAIL/UNKNOWN. |
-| Decommission / `decommission-request` | Obtain business/technical/data/platform/governance decisions before destructive actions; verify communications, resource/access retirement, credential revocation, billing, retention/legal holds, and disposal evidence. Operators execute the approved work manually. Remove original readiness/approval, record retirement, and close the original to stop scheduled validation, preserving audit history. |
+| Change or re-assessment / `reassessment-request` | Review the same target's changed scope on the **original** publication request. Rerun `/publish`; manually reopen affected controls for metadata-only changes. Refresh evidence, `/validate`, and obtain a new human decision. [Full procedure](https://beardofedu.github.io/publish-solution/requests.html#reassessment). |
+| Control exception / `control-exception` | Record the control, risk owner, evidence, decision, conditions, and real expiry. Daily reminders cover due (within seven days), expired, or incomplete tracked records, open or closed. They never approve, renew, or bypass FAIL/UNKNOWN. [Full procedure](https://beardofedu.github.io/publish-solution/requests.html#exceptions). |
+| Decommission / `decommission-request` | Obtain owner approvals before manual retirement. Verify disposal/access evidence, remove advisory approval, and close the original to stop validation; preserve audit history. [Full procedure](https://beardofedu.github.io/publish-solution/requests.html#decommission). |
 
-An authorized hub collaborator opening, editing, or reopening a reassessment form automatically clears `ready-for-review` and `approved-for-production` on the verified same-hub original publication request and adds a visible linkage comment. The request issue is never used to create a second plan. Governance must still update and rerun `/publish` on the original. Do not run `/publish` or `/validate` on lifecycle forms. Closing one does not itself approve a change, accept risk, or verify retirement. Follow the full [rendered lifecycle runbooks](https://beardofedu.github.io/publish-solution/requests.html); update that URL in your own instance.
+Authorized reassessment events clear advisory labels on the verified same-hub original request and add a linkage comment. They do not create a second plan. Run `/publish` and `/validate` only on the original publication request, never lifecycle forms. Closing a lifecycle request is not approval or proof of retirement.
 
 ## 2. Choose target authentication
 
@@ -93,6 +56,8 @@ Create an organization-controlled GitHub App, disable unnecessary webhook subscr
 
 No target Actions write, Contents write, deployment, or cloud credentials are needed. The current validator checks Dependabot enablement with `GET /repos/{owner}/{repo}/vulnerability-alerts`, which requires **Administration read**, not a separate Dependabot alerts read grant; it does not list dependency alerts. See the [App endpoint permission mapping](https://docs.github.com/en/enterprise-cloud@latest/rest/authentication/permissions-required-for-github-apps). Permission labels may differ between App and fine-grained PAT UIs. Verify access against current REST documentation and organizational policy.
 
+Also leave Workflows write, Administration write, Secret scanning alerts, Secrets, Members, and organization administration ungranted. The validator reads secret-scanning settings, not alert contents. Verify restricted `security_and_analysis` fields with the actual installation token: HTTP 200 with missing fields is UNKNOWN, not PASS. Never escalate to Administration write without reviewed endpoint-specific justification.
+
 Configure these **Actions variables** in the hub:
 
 | Variable | Value |
@@ -111,9 +76,14 @@ The bundled workflows use `actions/create-github-app-token` to mint a short-live
 
 ### Safe configuration preflight
 
-From the trusted governance checkout, run `npm run preflight` for static checks. It requires no credentials and performs no network calls or writes. It reports an empty/invalid allowlist, invalid target names, targets matching the hub, out-of-allowlist targets, and what cannot be inspected without live access.
+Run preflight from the trusted governance checkout. Both modes are read-only: no App, credential, label, setting, or cloud resource is created.
 
-Optional `npm run preflight -- --live` performs read-only GitHub API requests. Set `GITHUB_REPOSITORY=owner/hub`, `HUB_TOKEN` with approved read access to the hub Actions variables/secrets metadata, and optionally `SOLUTION_TOKEN` for selected-target repository/issue reads. Add `--target owner/name` to select a target; targets not explicitly allowlisted are never queried. It checks that configured variable/secret *names* are visible and that App repository names exactly match the allowlist under the configured owner. It never prints secret/token values, proves that a secret is valid, proves target issue-write access, or fully verifies Administration/code-scanning feature permissions. GitHub does not return secret plaintext through these reads. Treat hidden names, 403/404, and unknown product features as unresolved; use an authorized pilot for actual permissions. Neither preflight mode creates an App, credential, label, setting or cloud resource; the separately selected optional bootstrap does not change preflight's read-only contract.
+| Mode | Inputs and coverage | Limits |
+| --- | --- | --- |
+| `npm run preflight` | No credentials/network. Checks allowlist validity, target names, hub/target separation, and target authorization. | Cannot inspect live access. |
+| `npm run preflight -- --live` | `GITHUB_REPOSITORY=owner/hub`; approved `HUB_TOKEN` reads repository-scoped Actions variable/secret names; optional `SOLUTION_TOKEN` reads selected-target metadata/issues. `--target owner/name` selects an allowlisted target; others are never queried. Checks App owner/list parity with policy. | No secret values printed or returned. Does not prove secret validity, target writes, full Administration/code-scanning permissions, or org/environment inheritance. |
+
+Hidden names, 403/404, and unknown features remain unresolved. Use the authorized [pilot](#5-pilot-the-full-flow) to prove actual permissions; optional bootstrap does not change preflight's read-only contract.
 
 One workflow token addresses **one installation owner**. For multiple organizations, run separate governance instances or extend token routing with an explicit, reviewed per-owner mapping. Do not try to use a token from one installation for another.
 
@@ -164,7 +134,12 @@ npm run bootstrap -- --repo contoso/publish-solution --pages
 npm run bootstrap -- --repo contoso/publish-solution --pages --apply --acknowledge-public-pages
 ```
 
-The acknowledgment means the site will be publicly accessible; it is separate from `--apply`. Private/internal repositories are **always manual** in this first version, even with acknowledgment. Existing Pages source/publication/access settings are never changed, even if they differ from the bundled workflow. For a missing public site, the script requires verified hub admin access, enabled Actions, `has_pages=false`, and an active `.github/workflows/pages.yml` on the remote default branch whose **only** trigger is `workflow_dispatch`. Remove automatic triggers through review first; the stock push-triggered workflow is intentionally refused. Permissions or applicable policy/plan refusals are blockers, not reasons to enable paid features or bypass policy. No workflow is dispatched and no deployment/access/privacy is verified by creation alone. Recheck Settings, environment protections, content and audience before a separate manual deployment.
+The acknowledgment accepts **public accessibility**, separately from `--apply`. Before creation:
+
+- Confirm public GitHub.com hub, verified hub administrator access, enabled Actions, and `has_pages=false`. Private/internal repositories stay manual even with acknowledgment.
+- Verify active `.github/workflows/pages.yml` on the remote default branch with **only `workflow_dispatch`**. Remove automatic triggers through review; the stock push trigger is refused.
+- Approve content/audience, applicable organization/plan policy, and the [required token permissions](#bootstrap-permissions). Refusals block the operation, not justify paid features or policy bypass.
+- Existing source/publication/access settings stay unchanged. Creation dispatches no workflow and proves neither deployment nor privacy. Recheck Settings and environment protections before separate deployment and audience testing.
 
 For the fully manual path, in **Settings → Pages → Build and deployment**, choose **GitHub Actions** and explicitly configure the approved visibility before publishing. Alternatively, an authorized maintainer can configure workflow-based Pages after the same review:
 
@@ -178,7 +153,9 @@ Push a docs change to `main` or manually run **Publish guide**. The site publish
 
 ## 5. Pilot the full flow
 
-Use a disposable solution repository you own and synthetic intake data. The local fixture-backed cross-repository tests are repeatable with `npm test`; the separately described **live pilot is opt-in and customer-executed only**. It was not run as part of this toolkit change.
+Use a disposable solution repository and synthetic data. **The live pilot is opt-in and customer-executed**, with approved credentials and authorization. `npm test` uses fixtures, not live evidence.
+
+Before processing and approval, check the source issue's description/AI behavior, real `YYYY-MM-DD` requested date, `dev`/`test`/`prod` environment, and three attestations. These human-review fields do not affect tiering, the plan fingerprint, or generated issues. Legacy/API-created or edited requests may omit them. Dev/test and deadlines never waive review; see [publication review](https://beardofedu.github.io/publish-solution/requests.html#publication).
 
 1. Allowlist the target and configure credentials with the exact repository scope.
 2. Submit the form. As a hub maintainer, comment `/publish` if automatic intake was not authorized.
@@ -211,6 +188,53 @@ Repeat all three scope updates for every new target: add it to the App installat
 | Approved label removed | Intake changes, a changed default-branch commit, failed validation, or detected gaps invalidate the old advisory decision; review again |
 
 Readiness is point-in-time. The daily schedule processes **open** labeled requests and may be delayed by GitHub. Keep requests open while monitoring readiness. API/network failures fail the workflow and remove advisory approval where possible; an outage can prevent even label updates, so production must never trust labels as its sole gate.
+
+## Optional preview-first bootstrap
+
+From the **trusted adopted hub checkout**, use Node.js 22+ and `npm ci --ignore-scripts`. Bootstrap supports **GitHub.com only**, rejects alternate `GITHUB_API_URL`/`GITHUB_SERVER_URL` destinations, and never reads targets. Inject hub-only `HUB_TOKEN` through approved secure environment handling, never arguments, history, files, or logs. No solution credential is needed.
+
+```sh
+# Read-only diagnostics and missing-label preview; no local writes.
+npm run bootstrap -- --repo contoso/publish-solution
+# Create only missing required labels after review.
+npm run bootstrap -- --repo contoso/publish-solution --labels --apply
+# Print proposals only; replace the example guide URL.
+npm run bootstrap -- --repo contoso/publish-solution --scaffold \
+  --guide-url https://guide.example.org/publication \
+  --target contoso/team-helper --app-id 12345
+```
+
+`--labels`, `--scaffold`, and `--pages` select operations; no selection previews labels alongside diagnostics. **Writes require `--apply` and `--labels` and/or `--pages`.** Apply alone or with only scaffolding is an error. Use `--help` for syntax.
+
+### Bootstrap permissions
+
+| Operation | Hub-only token permissions and authority |
+| --- | --- |
+| Every invocation | Metadata read and Administration read for repository/Actions diagnostics; applicable caller access. No settings enabled or widened. |
+| Label preview | Issues read, including pagination. |
+| `--labels --apply` | Issues write. Creates only five missing form/approval labels, using the manual colors and no descriptions. Existing labels and custom metadata stay unchanged. |
+| `--scaffold` | Common diagnostic reads only; no variables/secrets or target permission. |
+| `--pages` preview | Pages read; Contents and Actions read to verify a missing site's default-branch workflow. Existing sites are only read. |
+| `--pages --apply` | Pages write **and repository Administration write**, plus the reads above and hub administrator role. The role does not replace token permissions; organization administration is unnecessary. All [public-site prerequisites](#4-optionally-enable-pages) must pass, including `--acknowledge-public-pages`. |
+
+### Review the proposal
+
+Scaffolding prints policy fields, issue-chooser links, hub URL, and App variables; it is **not approval, an applied configuration, or an overwrite-ready patch**.
+
+- Existing policy/allowlist entries are preserved; proposed targets are not saved or authorized. Keep the default allowlist empty until approval.
+- `--app-owner` defaults to the hub owner. All proposed targets must share one installation owner; the repository-name list is exact, never a wildcard. Omitted `--app-id` remains a placeholder.
+- Incorporate approved changes through a protected PR. Review customer hub/source/guide links throughout HTML/Markdown, CODEOWNERS, branch filters, and policy.
+- The script never writes local files, commits, or PRs; sets variables/secrets; creates/installs an App; changes target scope, protections, access, licensing, or enterprise policy; enables Issues/Actions; widens permissions; provisions cloud resources; or dispatches deployment. [Authentication and credential management](#2-choose-target-authentication) remain manual.
+
+### Bootstrap results and recovery
+
+| Result | Meaning / next action |
+| --- | --- |
+| `PLANNED`, `APPLIED`, `UNCHANGED`, `BLOCKED`, `MANUAL` | Per-operation status plus counts. A fresh label preview normally has five `PLANNED`, `APPLIED=0`. Reruns/upgrades create only missing labels; existing/concurrent labels/sites are preserved, not reconciled. |
+| Final static preflight | Checks the **current checkout**, not proposals. An empty allowlist remains a manual intake blocker, never automatic approval. Successful apply also verifies label/site existence through reads. |
+| Exit 0 | Selected operations completed or previewed, **not installation or workload readiness**. Static checks cannot prove secret validity, installation scope, target writes, or org/environment inheritance. Use [live preflight](#safe-configuration-preflight) and the separately authorized pilot. Fixtures are not live pilot evidence. |
+| Nonzero / partial apply | Requested API, authorization, prerequisite, or verification failure. Earlier `APPLIED` changes remain; no rollback/deletion. Inspect the cause, rerun preview, then narrowly reapply. |
+| 403/404 | Hidden access/policy may look like absence. Resolve hub-only permissions, approvals, checkout, and destinations; never broaden target credentials. Pages 404 stays ambiguous until every [public-site prerequisite](#4-optionally-enable-pages) is verified. |
 
 ## References
 

@@ -6,14 +6,16 @@
 
 ## 1. Name the people, scope and prerequisites
 
-- [ ] Record the GitHub host, enterprise, intake organization, allowed solution organizations, exact deployed commit and (for GHES) version in [the sign-off record](sign-off.md).
+- [ ] Record installation-only or workload-launch scope, GitHub host, enterprise/orgs, approved targets, deployed commit, and any GHES version in [sign-off](sign-off.md#review-scope).
 - [ ] Confirm enterprise/org administration access is available through approved privileged access, with at least two named administrators and a recovery process. Do not give citizen developers enterprise admin.
 - [ ] Identify the service owner, backup, support queue, governance team and security escalation contact. Agree response targets before opening intake.
 - [ ] Define which data classifications may appear in request issues, evidence, workflow logs and the guide. Keep secrets, customer data and sensitive threat models in approved restricted systems; link to evidence rather than copying it.
 - [ ] Confirm GitHub Actions capacity/budget, repository creation rights, network reachability and GitHub API access. Confirm security licenses and [gate 4 cloud foundations](04-azure.md) for the relevant workload-readiness scope; they are not prerequisites merely to generate issues in an installation pilot.
 - [ ] Define the supported solution repository boundary. Initially use one organization and non-production repositories; additional organizations require their own access, installation and policy verification.
-- [ ] Populate [config/policy.yml](../config/policy.yml) `allowed_repositories` with approved `owner/repository` entries before accepting requests; it starts empty intentionally. Review `requester_permissions` (stock: `admin`, `maintain`, `write`), `guide_url` and `scan_max_age_days` (stock: 30). Do not confuse repository authorization with App installation scope: both must permit the same target.
-- [ ] Keep the intake hub distinct from solution targets. Targets must be active and have Issues enabled. Stock preflight requires the command actor to be an authorized **hub collaborator**, not merely a solution-repo writer; define how a maintainer reviews a citizen's request and comments `/publish` when automatic intake is denied.
+- [ ] Approve exact targets in the initially empty [allowlist](../SETUP.md#3-configure-policy-and-links). Attach the reviewed policy PR and matching App/PAT selection; neither boundary replaces the other.
+- [ ] Record policy decisions: command roles (stock `admin`, `maintain`, `write`), guide URL, and scan age (stock 30 days).
+- [ ] Verify the hub and targets are distinct; targets are active with Issues enabled.
+- [ ] Assign maintainer triage for citizen requests denied automatic intake. `/publish` requires an authorized **hub collaborator**, not merely a solution-repo writer.
 
 ### RACI
 
@@ -48,8 +50,8 @@ Perform the enterprise review first: organization and repository settings cannot
 
 | Policy | Ordered action and required evidence |
 |---|---|
-| Actions availability | Enable Actions for the intake hub after bootstrap review. Solution-repo Actions are needed only for the solution's own scanning/build/deployment workflows, not for hub issue generation. In enterprise/org **Actions > General**, approve the exact actions/reusable workflows referenced by the deployed workflows, including nested dependencies. An enterprise-only allow policy can block GitHub-authored `actions/*` too. |
-| Allowed actions | Inventory each `uses:` reference in intake, validation, Pages, CodeQL and deployment workflows. Record owner, approved ref/SHA, source, network destination and update owner. Typical families include checkout, runtime setup, App-token creation, Pages/artifact actions, CodeQL and Azure Login; this is not a blanket allowlist. |
+| Actions availability | Approve hub Actions after bootstrap review; attach effective enterprise/org **Actions > General** policy. Target Actions are for workload scanning/build/deployment, not issue generation. |
+| Allowed actions | Inventory exact `uses:` references and nested dependencies for selected workflows. Record approved full SHA, source, destination, and update owner. Enterprise-only policy may block even `actions/*`; examples are not a blanket allowlist. |
 | SHA enforcement | If policy requires full-length SHA pins, update and review the adopted workflows accordingly before enabling them. Do not temporarily disable enterprise protection to make a pilot pass. |
 | Workflow token | Use restrictive default `GITHUB_TOKEN` permissions and explicitly grant only job-required permissions. The repository token is not the general cross-repository credential. Avoid automatically granting Actions PR approval rights. |
 | Runners | Approve GitHub-hosted runners where available or isolated, preferably ephemeral self-hosted runners. GHES needs supported self-hosted runner infrastructure and approved action distribution (GitHub Connect or reviewed mirrors). Match runner versions to action Node/runtime requirements. |
@@ -60,8 +62,12 @@ Perform the enterprise review first: organization and repository settings cannot
 
 - [ ] Record policy screenshots/export links and runner/network evidence, without tokens or private keys.
 - [ ] Review all issue/comment inputs as untrusted. Verify workflows never interpolate request text into executable shell, check out an untrusted solution branch and execute it with the App key, or accept arbitrary organizations/hosts beyond the approved boundary.
-- [ ] On `ghe.com`, audit hard-coded `github.com`/`api.github.com` URLs, bot identity and URL validation in actions and scripts. Use the host's `github.server_url`, `github.api_url` and supported action inputs in the reviewed adaptation. A token issued on `ghe.com` does not authenticate GitHub.com resources. Stock workflows are supported on GitHub.com only.
-- [ ] On GHES, verify sub-issue endpoints and all security endpoints against the installed version. The stock implementation has a visible task-list fallback for specific native sub-issue failures; prove its independent catalog-based validation and decide whether internal policy accepts it. Other unsupported required functionality needs an implemented, tested adaptation or a no-go decision, not a documentation-only waiver.
+### Alternate-host adaptations, not stock installations
+
+**Stock support is GitHub.com only.** Use the [host decision matrix](README.md#deployment-scope-and-documentation-currency) before these additional tasks.
+
+- [ ] On `ghe.com`, review hard-coded hosts, bot identity, URL validation, `github.server_url`/`github.api_url`, and action inputs. Its tokens do not authenticate GitHub.com.
+- [ ] On GHES, prove version-specific security/sub-issue endpoints and catalog-based validation, including accepted task-list fallback. Unsupported required behavior needs a tested implementation or no-go decision, never a documentation-only waiver.
 
 Sources: [Actions organization policy](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-organization-settings/disabling-or-limiting-github-actions-for-your-organization); [App installation requests](https://docs.github.com/en/enterprise-cloud@latest/apps/using-github-apps/requesting-a-github-app-from-your-organization-owner); [PAT policies](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization); [GHE.com differences](https://docs.github.com/en/enterprise-cloud@latest/admin/data-residency/feature-overview-for-github-enterprise-cloud-with-data-residency).
 

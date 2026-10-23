@@ -18,19 +18,18 @@ Sources: [About GitHub Advanced Security](https://docs.github.com/en/enterprise-
 
 ### Verify the validator's dependencies
 
-| Control surface | Administrator must establish | Acceptance evidence |
+| Control surface | Automated signal / prerequisite | Additional human proof |
 |---|---|---|
 | Secret scanning and push protection | Licensed, enabled on the solution repo; bypass governance and remediation owner | Actual enablement visible to validator identity and approved synthetic push-protection test |
 | Dependencies | Dependency graph/alerts and the update configuration required by the deployed validator; registry access for private dependencies | Successful dependency/update run and endpoint visibility |
-| CodeQL / code scanning | Supported languages/builds, default or advanced setup, allowed actions and adequate runners | A successful analysis at the exact current default-branch commit, within `scan_max_age_days`, among the latest 100 analyses; verify the required scanner separately |
-| Rulesets | Active rules targeting default/release branches, required review/checks and reviewed bypass list | Direct-push and unapproved-PR rejection |
-| CODEOWNERS | Valid, visible reviewer teams with explicit write access to the repo; protect CODEOWNERS itself | GitHub recognizes owners and requests the expected review |
-| SECURITY.md | Internal vulnerability reporting route and response owner | Approved policy at the path the validator recognizes |
+| CodeQL / code scanning | Successful analysis at the exact default-branch commit, within `scan_max_age_days`, among the latest 100 analyses; licensed tooling/runners required | Verify required scanner and supported-language/build coverage; stock check accepts any successful scanner |
+| Rulesets | Required review via classic protection or applicable active ruleset | Direct-push/unapproved-PR rejection; release branches, required checks, and bypass review |
+| CODEOWNERS | Substantive file | Valid visible teams with explicit write access; protect the file and prove expected reviews |
+| SECURITY.md | Substantive file at a recognized path | Test the approved reporting route and response ownership |
 | `.env`/secrets hygiene | No non-template `.env` files at default-branch head; prevent actual secrets and review history separately | Negative fixture rejected; only `.env.example`, `.env.sample` and `.env.template` filename exemptions; a truncated tree is UNKNOWN |
-| OIDC deployment workflow | Protected deploy job with `id-token: write`, correct cloud identity/trust and required environment controls | Real sandbox authentication and unauthorized-context rejection |
+| OIDC deployment workflow | Azure workflow pattern, not executed trust | Protected job with `id-token: write`; real sandbox authentication, scoped cloud role, and unauthorized-context rejection |
 
-- [ ] Read the deployed [validator scripts](../scripts/) to record exactly what each check proves. File existence, enabled tooling and closed issues do **not** prove there are zero vulnerabilities, correct cloud RBAC or complete evidence.
-- [ ] Record stock detector limits explicitly: code scanning accepts successful analysis evidence without requiring a particular scanner; branch review checks accept classic protection or an applicable active ruleset; CODEOWNERS/SECURITY.md content checks do not prove valid teams/reporting routes; OIDC detection is an Azure workflow pattern, not an executed cloud trust test.
+- [ ] Reconcile this table against the deployed [checks](../scripts/checks.mjs) and [report limits](https://beardofedu.github.io/publish-solution/governance.html#automated-report). Files, tooling, and issue closure do not prove zero vulnerabilities, cloud role-based access control (RBAC), or evidence quality.
 - [ ] Close required control issues **as completed**. Closing as not planned or duplicate does not satisfy validation, and manually checking rendered parent task-list boxes is not authoritative.
 - [ ] Establish separate alert triage/remediation SLAs and a security review for material findings; document whether unresolved findings block production under internal policy.
 - [ ] If CodeQL cannot analyze a language or a host cannot provide a required feature, implement and test the approved alternative through [CUSTOMIZING.md](../CUSTOMIZING.md), or exclude that class of solution from launch. Do not manufacture passing API responses.
@@ -44,7 +43,7 @@ Sources: [About GitHub Advanced Security](https://docs.github.com/en/enterprise-
 - [ ] Define who may invoke `/validate` and who may apply `approved-for-production`. Test those authorization checks in the actual implementation, not just the written procedure.
 - [ ] Record the approval decision with reviewer, time, policy/catalog revision, evidence URLs, release commit/artifact and any exceptions. Material changes after approval require reassessment.
 
-**Important boundary:** CODEOWNERS/rulesets protect code changes, not issue labels. Users with applicable issue permissions may be able to change labels or close control issues. Do not claim a governance-only label is enforced unless the automation explicitly verifies authorized reviewers. Use a protected deployment environment and least-privilege cloud identity for actual production access. If the deployed toolkit does not enforce the required separation of duties, remediate it or hold launch.
+**Labels are advisory, not authorization.** CODEOWNERS/rulesets protect code, not issue labels or closure. Do not claim exclusive governance approval without verified reviewer enforcement. Protect production through deployment environments and least-privilege cloud identity. If required separation of duties is unenforced, remediate or hold launch.
 
 Source: [About code owners and review behavior](https://docs.github.com/en/enterprise-cloud@latest/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
 
@@ -57,7 +56,7 @@ Source: [About code owners and review behavior](https://docs.github.com/en/enter
 - [ ] Freeze the catalog revision used by a request. Define how existing requests pick up newly mandatory controls, and test reruns without duplicate issues or lost evidence.
 - [ ] Define an exception path: risk owner, rationale, compensating controls, expiry, affected release and revalidation date. Only use toolkit-supported exception behavior; a manual waiver must not falsely make automation report a failed control as passed.
 
-The stock gate has **no automatic exception override**. PASS is required for every detector; FAIL and UNKNOWN both block readiness. A separate risk acceptance does not turn an unavailable detector green. Any approved detector change needs a protected, scoped implementation change and tests.
+**FAIL and UNKNOWN block readiness; exceptions never override them.** A separate risk decision is not an automated PASS. Detector changes need protected review, explicit scope, and tests; see [exception handling](https://beardofedu.github.io/publish-solution/requests.html#exceptions).
 
 Copy into your restricted policy register:
 

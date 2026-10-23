@@ -18,25 +18,26 @@
   </section>
   <aside class="notice"><strong>Public repository, public conversation.</strong> Do not submit secrets, personal data, customer names, or sensitive system details. Use team aliases. Organizations handling confidential information should run their own private governance copy.</aside>
   <p>Already have a publication plan? <a href="requests.html">Choose a change / re-assessment, control exception, or decommission request</a>. These forms route to manual governance review rather than creating duplicate plans.</p>
-  <aside class="notice tip"><strong>Installing this for your enterprise?</strong> Follow the <a href="setup.html">administrator installation walkthrough</a> from a customer-owned hub to a safe first pilot. The hub creates issues in solution repositories; no toolkit workflow or Azure credentials are needed there just to generate a plan.</aside>
-  <aside class="notice tip"><strong>Path A is the default:</strong> prepare evidence and hand off to the customer platform team for independent deployment. <a href="paths.html">Compare all three paths</a>; Azure and protected-release material is reference-only, not an active deployment workflow.</aside>
+  <p><strong>Path A is the default:</strong> prepare evidence for independent platform-team deployment. <a href="paths.html">Paths B and C</a> are references only, not active deployment workflows.</p>
   <h2>Your path to publication</h2>
   <div class="grid">
-    <section class="card"><div class="number">01 / DESCRIBE</div><h3>Tell us what you built</h3><p>Describe the app's purpose and AI behavior. Identify its repository, owners, data, audience, integrations, hosting, requested date, and dev/test/prod environment. Read the guide and attest to safe submission and completing the controls. A maintainer allowlists the target and authorizes processing.</p></section>
+    <section class="card"><div class="number">01 / DESCRIBE</div><h3>Tell us what you built</h3><p>Complete the <a href="requests.html#publication">publication form</a> with the app's purpose, AI behavior, owners, and risk answers. A maintainer authorizes the target repository and processing.</p></section>
     <section class="card"><div class="number">02 / PREPARE</div><h3>Work the issues</h3><p>The toolkit creates one tracking issue and a set of control issues in your solution repository. Each explains why, what to do, evidence to collect, and how Copilot can help.</p></section>
     <section class="card"><div class="number">03 / VALIDATE</div><h3>Show the evidence</h3><p>Close required controls as <em>completed</em>, with evidence. Ask a maintainer to comment <code>/validate</code> on the original request. Fix reported gaps.</p></section>
     <section class="card"><div class="number">04 / REVIEW</div><h3>Get a human decision</h3><p>A clean automated report earns <code>ready-for-review</code>, not deployment permission. Governance reviews evidence and decides whether to apply <code>approved-for-production</code>.</p></section>
   </div>
-  <h2>Risk changes the work, not the accountability</h2>
+  <h2 id="risk-tiers">Risk changes the work, not the accountability</h2>
   <div class="table-wrap"><table><caption>Default risk tiers; organizations can customize the rules</caption><thead><tr><th scope="col">Tier</th><th scope="col">Typical signals</th><th scope="col">What changes</th></tr></thead><tbody>
     <tr><th scope="row">Low</th><td>Internal, public/internal data, small team, read-only integrations, no runtime AI.</td><td>Core controls across ownership, security, delivery, and operations.</td></tr>
-    <tr><th scope="row">Moderate</th><td>Confidential data, organization-wide/public audience, business-system writes, or runtime LLM APIs.</td><td>Add recovery/capacity exercises; runtime AI adds its own control.</td></tr>
-    <tr><th scope="row">High</th><td>External exposure, PII/PHI/PCI/regulated data, or privileged integrations.</td><td>Add independent security/privacy review and explicit residual-risk acceptance.</td></tr>
+    <tr><th scope="row">Moderate</th><td>Confidential data, organization-wide/public audience, business-system writes, or calls to a large language model (LLM) at runtime.</td><td>Add recovery/capacity exercises; runtime AI adds its own control.</td></tr>
+    <tr><th scope="row">High</th><td>External exposure, personal (PII), health (PHI), payment-card (PCI), or other regulated data; privileged integrations.</td><td>Add independent security/privacy review and explicit residual-risk acceptance.</td></tr>
   </tbody></table></div>
   <p>The highest matching tier wins. “AI helped write the code” is different from “the deployed app calls an LLM.” Every tier still requires secure identity, secret handling, and a reviewed deployment path.</p>
+  <p><strong>A control is a requirement with evidence; a check is an automated signal.</strong> Completing issues alone is not readiness: FAIL and UNKNOWN checks block it. See the <a href="governance.html#automated-report">validation rules</a>.</p>
   <aside class="notice tip"><strong>Use Copilot as a collaborator, not an approver.</strong> Ask it to explain your code, propose configuration, and write tests. Never paste credentials or regulated data into a prompt. Review the output and verify live cloud settings with your platform team.</aside>
   <h2>What this toolkit does not promise</h2>
   <p>A checklist is not a penetration test, compliance certification, or automatic cloud deployment. Repository checks cannot prove your cloud identity, network, logging, or data protections are correct. Keep production environments protected independently of GitHub issue labels.</p>
+  <p><strong>Administrators:</strong> follow the <a href="setup.html#scope">installation walkthrough</a>. Stock support is GitHub.com only. Your governance repository (the <strong>hub</strong>) creates plans in separate solution repositories; issue generation needs no target toolkit workflow or Azure credentials.</p>
 </main>
 <footer>Cloud-agnostic controls. Azure-focused examples. <a href="https://github.com/beardofedu/publish-solution">Source and MIT license</a>. No customer-specific data.</footer>
 </body></html>
