@@ -132,8 +132,10 @@ async function pagesPrerequisites(api, path, repo, actions, options) {
   const file = await api.request('GET', `${path}/contents/.github/workflows/pages.yml?ref=${encodeURIComponent(repo.default_branch)}`);
   if (file.encoding !== 'base64' || typeof file.content !== 'string') throw new Error('Cannot verify Pages workflow contents.');
   const workflow = parse(Buffer.from(file.content, 'base64').toString('utf8'), { uniqueKeys: true, maxAliasCount: 0 });
-  if (!workflow?.on || typeof workflow.on !== 'object' || Array.isArray(workflow.on) ||
-      Object.keys(workflow.on).length !== 1 || !Object.hasOwn(workflow.on, 'workflow_dispatch')) {
+  const triggers = typeof workflow?.on === 'string' ? [workflow.on] :
+    Array.isArray(workflow?.on) ? workflow.on :
+      workflow?.on && typeof workflow.on === 'object' ? Object.keys(workflow.on) : [];
+  if (triggers.length !== 1 || triggers[0] !== 'workflow_dispatch') {
     throw new Error('Remove all automatic triggers from .github/workflows/pages.yml through review; retain only workflow_dispatch before creating Pages.');
   }
   const state = await api.request('GET', `${path}/actions/workflows/pages.yml`);
