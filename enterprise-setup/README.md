@@ -10,6 +10,8 @@ Follow the **[rendered enterprise installation walkthrough](https://beardofedu.g
 
 An **issue-generation installation pilot** needs hub Actions, target access/Issues, credentials and policy, but no target toolkit workflow, Azure resources/credentials or Copilot seat. It is successful when the correct parent/control issues are created idempotently and validation reports honest gaps. Record that limited scope in the existing sign-off record; do not mark unexecuted workload tests as passed.
 
+The [optional preview-first bootstrap](../SETUP.md#optional-preview-first-bootstrap) reduces repetitive label setup and prints configuration proposals for review; the fully manual walkthrough remains supported. `npm run bootstrap -- --repo contoso/publish-solution` reads hub diagnostics with hub-only credentials and makes no local/remote writes. Mutations require selected `--labels`/`--pages` plus `--apply`; configuration/App scope/secrets and enterprise gates remain manual. Pages creation is restricted to explicitly acknowledged public sites with verified prerequisites; private/internal or existing settings stay manual/unchanged. Static and live `npm run preflight` remain read-only. Fixture tests are not a live bootstrap pilot or launch evidence.
+
 The gates below address **broader enterprise service/workload launch readiness**. Azure gate 4 and cloud pilot tests apply when preparing a workload deployment, not as an installer for the intake service. Pages is optional when an approved alternative guide host is used. The stock Azure-specific validator can still block workload readiness until implemented requirements or an approved, tested detector adaptation are satisfied.
 
 ## Complete these gates in order

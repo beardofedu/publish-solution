@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { GitHub, setLabels, upsertComment } from './github.mjs';
-import { repositoryPattern, loadConfig } from './model.mjs';
+import { hasLabel, repositoryPattern, loadConfig } from './model.mjs';
 import { authorize } from './auth.mjs';
 import { exceptionReminderTag, reassessmentTag, reportTag, stateTag } from './tags.mjs';
 
@@ -94,7 +94,7 @@ export async function remindExceptions(hubApi, hub, now = new Date()) {
 }
 
 export async function invalidateForReassessment({ hubApi, hub, issue }) {
-  if (!issue.labels?.some(label => label.name === 'reassessment-request')) {
+  if (!hasLabel(issue, 'reassessment-request')) {
     throw new Error('Only reassessment-request issues can invalidate an original request.');
   }
   if (issue.state !== 'open') throw new Error('Reassessment request must be open.');
@@ -103,7 +103,7 @@ export async function invalidateForReassessment({ hubApi, hub, issue }) {
     throw new Error('Original publication request must link to a different issue in this governance repository.');
   }
   const original = await hubApi.request('GET', `/repos/${hub}/issues/${originalNumber}`);
-  if (original.pull_request || !original.labels?.some(label => label.name === 'publication-request')) {
+  if (original.pull_request || !hasLabel(original, 'publication-request')) {
     throw new Error('Linked issue is not a publication request; governance must correct the reassessment link.');
   }
   const requestRepository = field(issue.body, 'Solution repository')?.toLowerCase();

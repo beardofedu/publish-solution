@@ -25,6 +25,11 @@ export const choices = {
 export const tiers = ['Low', 'Moderate', 'High'];
 export const repositoryPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]*\/[a-zA-Z0-9_.-]+$/;
 
+export function hasLabel(issue, name) {
+  return issue.labels?.some(label => typeof label.name === 'string' &&
+    label.name.toLowerCase() === name.toLowerCase()) ?? false;
+}
+
 export function parseIntake(body) {
   const sections = new Map();
   const structuredBody = (body ?? '').split('<!-- publish-solution:metadata -->', 1)[0];

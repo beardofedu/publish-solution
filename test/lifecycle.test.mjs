@@ -44,7 +44,7 @@ test('handoff exception lookup includes only records linked to this original req
 });
 
 test('reassessment invalidation only clears a linked publication issue in the hub', async () => {
-  const labels = new Set(['ready-for-review', 'approved-for-production', 'publication-request']);
+  const labels = new Set(['ready-for-review', 'approved-for-production', 'Publication-Request']);
   const comments = [];
   const stateComment = {
     id: 2,
@@ -81,12 +81,13 @@ test('reassessment invalidation only clears a linked publication issue in the hu
     number: 30,
     state: 'open',
     html_url: `https://github.com/${hub}/issues/30`,
-    labels: [{ name: 'reassessment-request' }],
+    labels: [{ name: 'Reassessment-Request' }],
     body: `### Original publication request\n\nhttps://github.com/${hub}/issues/23\n\n### Solution repository\n\nexample/solution`,
   };
   assert.equal(await invalidateForReassessment({ hubApi: api, hub, issue }), 23);
   assert(!labels.has('ready-for-review'));
   assert(!labels.has('approved-for-production'));
+  assert(labels.has('Publication-Request'));
   assert(comments.some(body => body.includes('Reassessment request [#30]')));
   const savedState = JSON.parse(stateComment.body.match(/<!-- state-json:({[^\n]+}) -->/)[1]);
   assert.equal(savedState.repository, 'example/solution');

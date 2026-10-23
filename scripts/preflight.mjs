@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { GitHub } from './github.mjs';
-import { loadConfig } from './model.mjs';
+import { hasLabel, loadConfig } from './model.mjs';
 import { authorize, clearGate } from './publish.mjs';
 import { upsertComment } from './github.mjs';
 import { reportTag } from './tags.mjs';
@@ -11,7 +11,7 @@ try {
     const { policy } = await loadConfig(process.env.TOOLKIT_PATH ?? process.cwd());
     const api = new GitHub(process.env.HUB_TOKEN, process.env.GITHUB_API_URL);
     if (process.env.GITHUB_EVENT_NAME === 'issues' && event.issue &&
-        event.issue.labels?.some(label => label.name === 'publication-request') &&
+        hasLabel(event.issue, 'publication-request') &&
         ['edited', 'reopened'].includes(event.action)) {
       // An untrusted edit must invalidate the old advisory decision, even when
       // its author is not allowed to mint a cross-repository token.
