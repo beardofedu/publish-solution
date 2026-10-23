@@ -45,7 +45,7 @@ The generated validation report includes a handoff package with the current vali
 | `.github/workflows/` | Intake, validation, daily sweep, CI, and Pages publication |
 | `config/` | Exact target allowlist, trigger permissions, tier rules, and per-control role/dependency/evidence packages |
 | `controls/*.yml` | 14 control definitions covering ownership, repo hygiene, secrets, dependencies, code scanning, identity, data, AI, delivery, runtime, operations, resilience, and independent review |
-| `scripts/` | Node.js automation, read-only setup diagnostics, lifecycle reminders, API client, conservative detectors, catalog validation |
+| `scripts/` | Node.js automation, optional preview-first bootstrap, read-only setup diagnostics, lifecycle reminders, API client, conservative detectors, catalog validation |
 | `examples/` | Local-only reference app and a fully synthetic start-to-handoff walkthrough |
 | `test/` | Unit and mocked cross-repository integration tests |
 | `docs/` | Responsive, accessible static HTML guide; no build step or external assets |
@@ -65,6 +65,8 @@ npm run preflight
 ```
 
 Node.js 22+ is required. CI also runs `actionlint`.
+
+**Optional installation helper:** from the trusted adopted checkout, use `npm run bootstrap -- --repo contoso/publish-solution` for hub diagnostics and a missing-label preview, with approved hub-only `HUB_TOKEN` injection. It makes no writes by default, including local files. Only explicit `--labels --apply` creates missing labels; `--scaffold --guide-url https://guide.example.org/publication --target contoso/team-helper` prints policy/link/App-variable proposals for manual review, never configuration approval or credential upload. Pages is separately opt-in and conservative: public hubs only, explicit visibility acknowledgment and verified manual-only workflow; existing/private/internal sites stay untouched/manual. See [optional bootstrap permissions, examples and troubleshooting](SETUP.md#optional-preview-first-bootstrap) or the [rendered walkthrough](https://beardofedu.github.io/publish-solution/setup.html#bootstrap). Fully manual installation remains supported; no live bootstrap pilot is implied.
 
 `npm run preflight` is static and read-only; it needs no credentials. `npm run preflight -- --live` optionally inspects repository-scoped Actions variable/secret names and selected-target read access with `GITHUB_REPOSITORY`, `HUB_TOKEN`, and optionally `SOLUTION_TOKEN`; organization/environment-scoped values are not enumerated. It never prints token/secret values, writes resources, or claims a visible secret is valid. Bundled App workflows refuse to mint an installation token unless `SOLUTION_APP_REPOSITORIES` exactly matches the reviewed allowlist for its one installation owner.
 
