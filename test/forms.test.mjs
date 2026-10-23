@@ -6,7 +6,9 @@ import { deriveTier, fields, loadConfig, parseIntake } from '../scripts/model.mj
 import { contextFor } from '../scripts/publish.mjs';
 
 const directory = '.github/ISSUE_TEMPLATE';
-const readYaml = async path => parse(await readFile(path, 'utf8'), { uniqueKeys: true, maxAliasCount: 0 });
+const readYaml = async (path, version = '1.2') => parse(await readFile(path, 'utf8'), {
+  version, uniqueKeys: true, maxAliasCount: 0,
+});
 const form = async name => readYaml(`${directory}/${name}.yml`);
 const publicationAnswers = {
   repository: 'example/solution', business: 'business-team', technical: 'technical-team',
@@ -26,6 +28,41 @@ function renderBody(template, answers) {
     return `### ${field.attributes.label}\n\n${value}`;
   }).join('\n\n');
 }
+
+test('all issue-form options and checkbox labels remain strings under YAML 1.1', async () => {
+  const files = (await readdir(directory)).filter(file => /\.ya?ml$/.test(file));
+  for (const file of files) {
+    const template = await readYaml(`${directory}/${file}`, '1.1');
+    const localTemplate = await readYaml(`${directory}/${file}`);
+    for (const [index, field] of (template.body ?? []).entries()) {
+      if (!field.attributes?.options) continue;
+      for (const [optionIndex, option] of field.attributes.options.entries()) {
+        const value = field.type === 'checkboxes' ? option.label : option;
+        const context = `${file}: body[${index}].attributes.options[${optionIndex}]`;
+        assert.equal(typeof value, 'string', `${context} must be a string under YAML 1.1; quote boolean-like or numeric values`);
+      }
+      assert.deepEqual(field.attributes.options, localTemplate.body[index].attributes.options,
+        `${file}: ${field.id} options must match under YAML 1.1 and 1.2`);
+    }
+  }
+});
+
+test('GitHub-parsed AI options preserve intake answers and configured risk tiers', async () => {
+  const template = await readYaml(`${directory}/request-publication.yml`, '1.1');
+  const options = template.body.find(field => field.id === 'ai').attributes.options;
+  assert.deepEqual(options, ['No', 'Yes']);
+  const { tierConfig } = await loadConfig();
+  for (const ai of options) {
+    const intake = parseIntake(renderBody(template, {
+      ...publicationAnswers, ai,
+      solution_description: 'Synthetic team helper.',
+      go_live_date: '2027-01-31',
+      target_environment: 'dev',
+    }));
+    assert.equal(intake.ai, ai);
+    assert.equal(deriveTier(intake, tierConfig), ai === 'Yes' ? 'Moderate' : 'Low');
+  }
+});
 
 test('publication preserves every original field ID, heading, option and required flag', async () => {
   const template = await form('request-publication');
