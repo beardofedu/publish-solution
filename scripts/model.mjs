@@ -22,7 +22,23 @@ export const choices = {
   integrations: ['None or read-only', 'Business-system writes', 'Privileged'],
   hosting: ['Azure', 'Other cloud', 'Undecided'],
 };
+// Stock tier order (lowest to highest); config/tiers.yml `levels` may replace it.
 export const tiers = ['Low', 'Moderate', 'High'];
+export const defaultRoles = {
+  citizen: { name: 'Citizen developer' },
+  platform: { name: 'Platform engineering' },
+  security: { name: 'Security' },
+  data: { name: 'Data owner' },
+};
+export const checkIds = ['secret-scanning', 'dependabot-alerts', 'code-scanning', 'branch-reviews',
+  'codeowners', 'security-policy', 'env-files', 'deployment-oidc'];
+export const oidcProviders = ['azure', 'aws', 'gcp'];
+const tierNamePattern = /^[A-Z][A-Za-z0-9]*(?: [A-Za-z0-9]+)*$/;
+const roleIdPattern = /^[a-z][a-z0-9-]*$/;
+
+export function tierLabel(tier) {
+  return `risk:${tier.toLowerCase().replace(/ /g, '-')}`;
+}
 export const repositoryPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]*\/[a-zA-Z0-9_.-]+$/;
 
 export function hasLabel(issue, name) {
@@ -81,9 +97,19 @@ export async function loadConfig(root = process.cwd()) {
   const yaml = async path => parse(await readFile(resolve(root, path), 'utf8'), {
     uniqueKeys: true, maxAliasCount: 0,
   });
+  const optionalYaml = async path => {
+    try {
+      return await yaml(path);
+    } catch (error) {
+      if (error.code === 'ENOENT') return undefined;
+      throw error;
+    }
+  };
   const policy = await yaml('config/policy.yml');
   const tierConfig = await yaml('config/tiers.yml');
   const workPackages = await yaml('config/work-packages.yml');
+  const roleConfig = await optionalYaml('config/roles.yml');
+  const checkConfig = await optionalYaml('config/checks.yml');
   if (!Array.isArray(policy.allowed_repositories) ||
       (policy.onboarding_prs !== undefined && typeof policy.onboarding_prs !== 'boolean') ||
       ((policy.onboarding_prs || policy.onboarding_installation_id !== undefined) &&
@@ -96,22 +122,64 @@ export async function loadConfig(root = process.cwd()) {
     throw new Error('Invalid config/policy.yml.');
   }
   if (!/^https:\/\/[^?#\s]+$/.test(policy.guide_url)) throw new Error('guide_url must be an HTTPS base URL.');
-  if (!tiers.includes(tierConfig.default) || !Array.isArray(tierConfig.rules) ||
-      tierConfig.rules.some(rule => !tiers.includes(rule.tier) || !rule.any ||
+  if (!tierConfig || typeof tierConfig !== 'object' || Array.isArray(tierConfig)) throw new Error('Invalid config/tiers.yml.');
+  const levels = tierConfig.levels ?? tiers;
+  if (!Array.isArray(levels) || !levels.length || levels.length > 10 ||
+      levels.some(tier => typeof tier !== 'string' || tier.length > 30 || !tierNamePattern.test(tier)) ||
+      new Set(levels.map(tierLabel)).size !== levels.length) {
+    throw new Error('Invalid config/tiers.yml: levels must be 1-10 unique capitalized names, lowest risk first.');
+  }
+  tierConfig.levels = [...levels];
+  if (!levels.includes(tierConfig.default) || !Array.isArray(tierConfig.rules) ||
+      tierConfig.rules.some(rule => !levels.includes(rule.tier) || !rule.any ||
         !Object.keys(rule.any).length || Object.entries(rule.any).some(([field, values]) =>
           !choices[field] || !Array.isArray(values) || !values.length ||
           values.some(value => !choices[field].includes(value))))) {
     throw new Error('Invalid config/tiers.yml.');
   }
   // A lower tier cannot take precedence over a higher matching tier.
-  tierConfig.rules.sort((a, b) => tiers.indexOf(b.tier) - tiers.indexOf(a.tier));
+  tierConfig.rules.sort((a, b) => levels.indexOf(b.tier) - levels.indexOf(a.tier));
+  const roles = roleConfig === undefined ? defaultRoles : roleConfig?.roles;
+  if (!roles || typeof roles !== 'object' || Array.isArray(roles) || !Object.keys(roles).length ||
+      (roleConfig && Object.keys(roleConfig).some(key => key !== 'roles')) ||
+      Object.entries(roles).some(([id, role]) => !roleIdPattern.test(id) || !role ||
+        typeof role !== 'object' || typeof role.name !== 'string' || !role.name.trim() || role.name.length > 60 ||
+        (role.description !== undefined && (typeof role.description !== 'string' || !role.description.trim())) ||
+        Object.keys(role).some(key => !['name', 'description'].includes(key)))) {
+    throw new Error('Invalid config/roles.yml.');
+  }
+  const checks = Object.fromEntries(checkIds.map(id => [id, {
+    enabled: true, tiers: [...levels], ...(id === 'deployment-oidc' ? { providers: ['azure'] } : {}),
+  }]));
+  if (checkConfig !== undefined) {
+    if (!checkConfig || typeof checkConfig !== 'object' || Array.isArray(checkConfig) ||
+        Object.keys(checkConfig).some(key => key !== 'checks') ||
+        !checkConfig.checks || typeof checkConfig.checks !== 'object' || Array.isArray(checkConfig.checks)) {
+      throw new Error('Invalid config/checks.yml.');
+    }
+    for (const [id, setting] of Object.entries(checkConfig.checks)) {
+      const allowed = ['enabled', 'tiers', ...(id === 'deployment-oidc' ? ['providers'] : [])];
+      if (!checkIds.includes(id) || !setting || typeof setting !== 'object' || Array.isArray(setting) ||
+          Object.keys(setting).some(key => !allowed.includes(key)) ||
+          (setting.enabled !== undefined && typeof setting.enabled !== 'boolean') ||
+          (setting.tiers !== undefined && (!Array.isArray(setting.tiers) || !setting.tiers.length ||
+            new Set(setting.tiers).size !== setting.tiers.length ||
+            setting.tiers.some(tier => !levels.includes(tier)))) ||
+          (setting.providers !== undefined && (!Array.isArray(setting.providers) || !setting.providers.length ||
+            new Set(setting.providers).size !== setting.providers.length ||
+            setting.providers.some(provider => !oidcProviders.includes(provider))))) {
+        throw new Error(`Invalid config/checks.yml entry: ${id}`);
+      }
+      Object.assign(checks[id], setting);
+    }
+  }
   const catalog = [];
   for (const file of (await readdir(resolve(root, 'controls'))).filter(name => name.endsWith('.yml')).sort()) {
     const control = await yaml(`controls/${file}`);
     if (typeof control.id !== 'string' || !/^[a-z][a-z0-9-]+$/.test(control.id) || control.id === 'parent' ||
         catalog.some(item => item.id === control.id) ||
         !Array.isArray(control.tiers) || !control.tiers.length ||
-        control.tiers.some(tier => !tiers.includes(tier)) ||
+        control.tiers.some(tier => !levels.includes(tier)) ||
         ['title', 'why', 'guide'].some(key => typeof control[key] !== 'string' || !control[key].trim()) ||
         !/^[a-z-]+\.html#[a-z0-9-]+$/.test(control.guide) ||
         ['steps', 'acceptance', 'prompts'].some(key => !Array.isArray(control[key]) ||
@@ -121,7 +189,7 @@ export async function loadConfig(root = process.cwd()) {
     }
     catalog.push(control);
   }
-  if (!catalog.length || tiers.some(tier => !catalog.some(control => control.tiers.includes(tier) && !control.when))) {
+  if (!catalog.length || levels.some(tier => !catalog.some(control => control.tiers.includes(tier) && !control.when))) {
     throw new Error('The catalog must contain unconditional controls for every tier.');
   }
   if (!workPackages || typeof workPackages !== 'object' || Array.isArray(workPackages) ||
@@ -131,9 +199,9 @@ export async function loadConfig(root = process.cwd()) {
   const ids = new Set(catalog.map(control => control.id));
   for (const [id, work] of Object.entries(workPackages)) {
     if (!ids.has(id) || !work || typeof work !== 'object' ||
-        !['citizen', 'platform', 'security', 'data'].includes(work.owner_role) ||
+        !Object.hasOwn(roles, work.owner_role) ||
         !Array.isArray(work.supporting_roles) || !work.supporting_roles.length ||
-        work.supporting_roles.some(role => !['citizen', 'platform', 'security', 'data'].includes(role)) ||
+        work.supporting_roles.some(role => !Object.hasOwn(roles, role)) ||
         new Set(work.supporting_roles).size !== work.supporting_roles.length ||
         !Array.isArray(work.depends_on) ||
         new Set(work.depends_on).size !== work.depends_on.length ||
@@ -160,7 +228,7 @@ export async function loadConfig(root = process.cwd()) {
     visited.add(id);
   }
   for (const id of ids) checkDependencyPath(id);
-  return { policy, tierConfig, catalog, workPackages };
+  return { policy, tierConfig, catalog, workPackages, roles, checks };
 }
 
 export function controlBody(control, tag, context) {
@@ -172,9 +240,13 @@ export function controlBody(control, tag, context) {
       return `- [ ] Complete ${url ? `[**${id}**](${url})` : `**${id}**`} first where applicable.`;
     }).join('\n')
     : '- No prerequisite control issue.';
+  const roleName = id => {
+    const name = (context.roles ?? defaultRoles)[id]?.name;
+    return name ? `${name} (\`${id}\`)` : `\`${id}\``;
+  };
   const roleLines = work
-    ? `- **Lead:** ${work.owner_role}\n- **Contributors:** ${work.supporting_roles.join(', ')}`
-    : '- Assign a citizen, platform, security, or data owner.';
+    ? `- **Lead:** ${roleName(work.owner_role)}\n- **Contributors:** ${work.supporting_roles.map(roleName).join(', ')}`
+    : '- Assign an accountable lead and contributing roles.';
   const evidenceLines = work?.evidence_template?.map(item => `- [ ] ${item}`).join('\n') ??
     '- Link reviewed evidence and identify its owner, scope, and date.';
   const acceptable = work?.evidence_examples?.acceptable?.map(item => `- ${item}`).join('\n') ??

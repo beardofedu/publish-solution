@@ -148,3 +148,36 @@ test('a default-branch change during checks blocks readiness', async () => {
   const { checks: branchChecks } = await automatedChecks(branchApi, 'example/solution', metadata, policy);
   assert.equal(branchChecks.find(check => check.name === 'Default-branch validation basis').status, 'FAIL');
 });
+
+test('OIDC detection supports configured AWS and Google Cloud providers', () => {
+  const job = steps => ({ on: { push: null }, permissions: { 'id-token': 'write' }, jobs: { deploy: { steps } } });
+  const aws = job([{ uses: 'aws-actions/configure-aws-credentials@v4', with: { 'role-to-assume': 'arn', 'aws-region': 'us-east-1' } }]);
+  const gcp = job([{ uses: 'google-github-actions/auth@v2', with: { workload_identity_provider: 'projects/1/pool' } }]);
+  assert.equal(hasOidcDeployment(aws), false);
+  assert.equal(hasOidcDeployment(aws, ['aws']), true);
+  assert.equal(hasOidcDeployment(gcp, ['azure', 'gcp']), true);
+  assert.equal(hasOidcDeployment(oidc, ['aws', 'gcp']), false);
+  const awsKeys = job([{ uses: 'aws-actions/configure-aws-credentials@v4',
+    with: { 'role-to-assume': 'arn', 'aws-region': 'us-east-1', 'aws-access-key-id': 'x' } }]);
+  const gcpKey = job([{ uses: 'google-github-actions/auth@v2', with: { workload_identity_provider: 'p', credentials_json: 'x' } }]);
+  assert.equal(hasOidcDeployment(awsKeys, ['aws']), false);
+  assert.equal(hasOidcDeployment(gcpKey, ['gcp']), false);
+});
+
+test('disabled and out-of-tier checks are reported as not run, never as PASS', async () => {
+  const checkConfig = {
+    'env-files': { enabled: false },
+    'code-scanning': { enabled: true, tiers: ['High'] },
+    'deployment-oidc': { enabled: true, providers: ['aws'] },
+  };
+  const { checks, skipped } = await automatedChecks(detectorApi(), 'example/solution', metadata, policy, { tier: 'Low', checkConfig });
+  assert.deepEqual(skipped, ['Code scanning at the default-branch head', 'No committed .env files at head']);
+  assert(!checks.some(check => skipped.includes(check.name)));
+  assert.equal(checks.find(check => check.name === 'OIDC deployment workflow (AWS)').status, 'FAIL');
+  assert(checks.some(check => check.name === 'Default-branch validation basis'));
+  const { skipped: highSkipped } = await automatedChecks(detectorApi(), 'example/solution', metadata, policy, { tier: 'High', checkConfig });
+  assert.deepEqual(highSkipped, ['No committed .env files at head']);
+  const plan = { control: { id: 'test' }, existing: { state: 'closed', state_reason: 'completed', html_url: 'url' } };
+  const report = validationReport([plan], [{ name: 'a', status: 'PASS', detail: 'ok' }], '', skipped);
+  assert(report.body.includes('Not run for this tier under hub configuration'));
+});

@@ -1,3 +1,7 @@
+# Risk tiers, lowest to highest. Rename or add tiers (1-10, capitalized words);
+# every tier needs at least one unconditional control in controls/*.yml.
+# Hub labels are derived as risk:<lowercase-hyphenated-name>.
+levels: [Low, Moderate, High]
 # Rules are evaluated from highest to lowest; matching any rule selects its tier.
 default: Low
 rules:

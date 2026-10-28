@@ -1,0 +1,23 @@
+# Automated configuration checks run by /validate. Omitted checks use the defaults
+# shown here (enabled for every tier). Disabling a check or narrowing its tiers is a
+# governance decision: skipped checks are listed as NOT RUN in the validation report
+# and handoff package, and never count as PASS.
+#
+# Keys per check:
+#   enabled: true | false
+#   tiers:   subset of config/tiers.yml levels (default: all)
+# deployment-oidc also accepts:
+#   providers: one or more of azure, aws, gcp (default: [azure])
+#
+# The "Default-branch validation basis" integrity check always runs.
+checks:
+  secret-scanning: { enabled: true }
+  dependabot-alerts: { enabled: true }
+  code-scanning: { enabled: true }
+  branch-reviews: { enabled: true }
+  codeowners: { enabled: true }
+  security-policy: { enabled: true }
+  env-files: { enabled: true }
+  deployment-oidc:
+    enabled: true
+    providers: [azure]

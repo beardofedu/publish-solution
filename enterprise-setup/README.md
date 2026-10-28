@@ -12,7 +12,7 @@ An **installation pilot** proves issue generation and repeatable reruns, not wor
 
 The [optional bootstrap reference](../SETUP.md#optional-preview-first-bootstrap) covers hub-only previews, explicit apply permissions, and public-only Pages creation. Manual installation remains supported. Preflight is read-only; fixture tests are not live evidence.
 
-**Path A is the default:** evidence handoff to independent platform deployment. Paths B/C are reference-only. The stock Azure-specific check still blocks workload readiness until satisfied or replaced by a reviewed, tested detector; a separate risk decision never produces an automated PASS.
+**Path A is the default:** evidence handoff to independent platform deployment. Paths B/C are reference-only. The stock deployment-identity check (Azure by default; AWS or Google Cloud via `config/checks.yml`) still blocks workload readiness until satisfied, reconfigured, or replaced by a reviewed, tested detector; a separate risk decision never produces an automated PASS.
 
 ## Complete these gates in order
 

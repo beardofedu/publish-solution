@@ -1,0 +1,17 @@
+# Accountable roles used by config/work-packages.yml (owner_role, supporting_roles).
+# IDs are lowercase kebab-case; names appear in generated control issues.
+# Rename, add, or remove roles to match your organization. Every role referenced
+# in work-packages.yml must exist here. `npm run check` enforces this.
+roles:
+  citizen:
+    name: Citizen developer
+    description: Solution author or owner who requests publication.
+  platform:
+    name: Platform engineering
+    description: Owns CI/CD, hosting, identity integration, and operations.
+  security:
+    name: Security
+    description: Reviews secrets, dependencies, scanning, and threat models.
+  data:
+    name: Data owner
+    description: Confirms classification, retention, and lawful data use.

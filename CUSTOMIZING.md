@@ -4,9 +4,10 @@ Configuration is **trusted governance code**. Protect it with the same review re
 
 ## Tier rules
 
-`config/tiers.yml` has a `default` tier and `rules`. Each rule has `tier` and `any`, a mapping of intake keys to accepted values. The highest matching tier wins regardless of file order. Valid tiers are `Low`, `Moderate`, and `High`.
+`config/tiers.yml` has optional `levels`, a `default` tier, and `rules`. `levels` lists tier names from lowest to highest risk (stock: `Low`, `Moderate`, `High`). Each rule has `tier` and `any`, a mapping of intake keys to accepted values. The highest matching tier, by position in `levels`, wins regardless of file order.
 
 ```yaml
+levels: [Low, Moderate, High]
 default: Low
 rules:
   - tier: High
@@ -21,6 +22,12 @@ rules:
       integrations: [Business-system writes]
       ai: [Yes]
 ```
+
+### Rename or add tiers
+
+Tier names are 1-10 unique capitalized words (letters, digits, single spaces), for example `levels: [Low, Moderate, High, Business Critical]`. Every level needs at least one unconditional control: add the new name to the `tiers` list of the relevant `controls/*.yml` files and, where needed, to `tiers` in `config/checks.yml`. The hub applies one `risk:<name>` label per request, lowercased with spaces as hyphens (`risk:business-critical`).
+
+Renaming or reordering tiers changes the plan fingerprint for affected requests, so maintainers must rerun `/publish`. Labels for removed tier names are not cleaned up automatically; remove them from open requests manually.
 
 Intake keys/choices live in `scripts/model.mjs` and the issue form. Change them together and update tests, guides, and rules. Invalid or missing intake values fail rather than defaulting to a lower risk.
 
@@ -52,15 +59,55 @@ IDs must be unique lowercase kebab-case and cannot be `parent`. The optional `wh
 
 Add a matching rendered guide anchor. `npm run check` checks catalog integrity, YAML, and relative HTML links/anchors. Run `npm test` after any policy/logic change.
 
-Each control ID also needs exactly one `config/work-packages.yml` entry: lead role (`citizen`, `platform`, `security`, or `data`), supporting roles, prerequisite IDs, evidence checklist, and sufficient/insufficient evidence examples. Dependencies must be acyclic. They link existing control issues, not new issues per checklist item. `npm run check`/`npm test` reject missing IDs, invalid roles, unknown dependencies, and cycles.
+Each control ID also needs exactly one `config/work-packages.yml` entry: lead role and supporting roles (IDs from `config/roles.yml`), prerequisite IDs, evidence checklist, and sufficient/insufficient evidence examples. Dependencies must be acyclic. They link existing control issues, not new issues per checklist item. `npm run check`/`npm test` reject missing IDs, invalid roles, unknown dependencies, and cycles.
 
 The **plan fingerprint** (called the state basis in code) hashes normalized risk answers, derived tier, applicable controls, and their work packages. A changed fingerprint requires `/publish`, reopens required issues, refreshes criteria, and clears advisory readiness/approval. Removed controls remain as audit issues but leave the required plan. Renamed IDs create new issues; never reuse IDs for unrelated requirements.
 
 Validation creates a timestamped, commit-bound [handoff package](https://beardofedu.github.io/publish-solution/governance.html#handoff). Governance review and platform acceptance remain pending. Request edits and authorized reassessment invalidate the old report; exception dates never turn FAIL/UNKNOWN into PASS. Do not customize records to synthesize a successful review.
 
+## Roles
+
+`config/roles.yml` defines the accountable roles that work packages reference. Generated control issues show the display name and ID, for example **Lead:** Platform engineering (`platform`).
+
+```yaml
+roles:
+  citizen: { name: Citizen developer }
+  platform: { name: Cloud Center of Excellence }
+  security: { name: Application security }
+  data: { name: Privacy office }
+  architecture:
+    name: Enterprise architecture
+    description: Reviews integration and hosting patterns.
+```
+
+Role IDs are lowercase kebab-case; `name` is required and `description` is optional. Every `owner_role` and `supporting_roles` value in `config/work-packages.yml` must exist here; `npm run check` rejects unknown roles. Renaming a role ID changes affected work packages and the plan fingerprint, so rerun `/publish`. Changing only a display name updates future issue text without reopening controls. If the file is absent, the four stock roles above are used.
+
 ## Automated checks and exceptions
 
-`scripts/checks.mjs` implements conservative configuration checks. Add a detector and tests when extending to another cloud. Every required detector must explicitly return PASS, FAIL, or UNKNOWN. Do not replace unsupported APIs with success-shaped defaults.
+`config/checks.yml` turns each stock detector on or off, limits it to specific tiers, and selects which cloud OIDC patterns the deployment check accepts:
+
+```yaml
+checks:
+  code-scanning: { tiers: [Moderate, High] }
+  env-files: { enabled: false }
+  deployment-oidc:
+    providers: [aws, gcp]   # any of azure, aws, gcp; default [azure]
+```
+
+| Check ID | Automated signal |
+| --- | --- |
+| `secret-scanning` | Secret scanning and push protection enabled |
+| `dependabot-alerts` | Dependabot alerts enabled |
+| `code-scanning` | Recent successful analysis at the default-branch head |
+| `branch-reviews` | Pull request approval required on the default branch |
+| `codeowners` | Substantive CODEOWNERS file |
+| `security-policy` | Substantive SECURITY.md file |
+| `env-files` | No committed non-template `.env` filenames |
+| `deployment-oidc` | OIDC login (Azure `azure/login`, AWS `aws-actions/configure-aws-credentials` with `role-to-assume`, or Google Cloud `google-github-actions/auth` with `workload_identity_provider`) and `id-token: write`, without static keys |
+
+Omitted checks stay enabled for every tier, and unknown IDs or tiers fail validation. The commit-binding *Default-branch validation basis* check always runs. A disabled or out-of-tier check is never reported as PASS: the validation report and handoff package list it as **NOT RUN**, and governance decides whether manual evidence covers it. Treat changes to this file as a risk decision that needs reviewed approval.
+
+`scripts/checks.mjs` implements the conservative detectors. Add a detector and tests when extending to a cloud or signal not covered above. Every required detector must explicitly return PASS, FAIL, or UNKNOWN. Do not replace unsupported APIs with success-shaped defaults.
 
 The stock gate has no automatic exception override. Equivalent controls and accepted risk belong in an explicit governance record; they do not magically satisfy unavailable checks. It is reasonable to customize the detector set through a reviewed code change with documented scope, evidence, and tests.
 

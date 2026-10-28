@@ -1,18 +1,30 @@
 import { parse } from 'yaml';
+import { checkIds } from './model.mjs';
 
 const pass = detail => ({ status: 'PASS', detail });
 const fail = detail => ({ status: 'FAIL', detail });
 const unknown = detail => ({ status: 'UNKNOWN', detail });
 
-export function hasOidcDeployment(workflow) {
+const providerLabels = { azure: 'Azure', aws: 'AWS', gcp: 'Google Cloud' };
+const oidcLogins = {
+  azure: step => /^azure\/login@/i.test(step.uses ?? '') &&
+    step.with?.['client-id'] && step.with?.['tenant-id'] &&
+    step.with?.['subscription-id'] && !step.with?.creds &&
+    step.with?.['auth-type'] !== 'IDENTITY',
+  aws: step => /^aws-actions\/configure-aws-credentials@/i.test(step.uses ?? '') &&
+    step.with?.['role-to-assume'] && step.with?.['aws-region'] &&
+    !step.with?.['aws-access-key-id'] && !step.with?.['aws-secret-access-key'] &&
+    !step.with?.['aws-session-token'] && !step.with?.['web-identity-token-file'],
+  gcp: step => /^google-github-actions\/auth@/i.test(step.uses ?? '') &&
+    step.with?.workload_identity_provider && !step.with?.credentials_json,
+};
+
+export function hasOidcDeployment(workflow, providers = ['azure']) {
   if (!workflow?.on || !workflow.jobs || typeof workflow.jobs !== 'object') return false;
   return Object.values(workflow.jobs).some(job => {
     const permissions = job.permissions ?? workflow.permissions;
     return permissions?.['id-token'] === 'write' && Array.isArray(job.steps) &&
-      job.steps.some(step => /^azure\/login@/i.test(step.uses ?? '') &&
-        step.with?.['client-id'] && step.with?.['tenant-id'] &&
-        step.with?.['subscription-id'] && !step.with?.creds &&
-        step.with?.['auth-type'] !== 'IDENTITY');
+      job.steps.some(step => providers.some(provider => oidcLogins[provider](step)));
   });
 }
 
@@ -21,11 +33,23 @@ export function unsafeEnvPaths(tree) {
     !/(^|\/)\.env\.(example|sample|template)$/.test(item.path)).map(item => item.path);
 }
 
-export async function automatedChecks(api, repository, metadata, policy, now = Date.now()) {
+const defaultCheckConfig = Object.fromEntries(checkIds.map(id => [id, { enabled: true, ...(id === 'deployment-oidc' ? { providers: ['azure'] } : {}) }]));
+
+export async function automatedChecks(api, repository, metadata, policy,
+  { now = Date.now(), tier, checkConfig = defaultCheckConfig } = {}) {
   const root = `/repos/${repository}`;
   const branch = metadata.default_branch;
   const checks = [];
-  async function check(name, run) {
+  const skipped = [];
+  const applies = id => {
+    const setting = checkConfig[id] ?? defaultCheckConfig[id];
+    return setting.enabled !== false && (!tier || !setting.tiers || setting.tiers.includes(tier));
+  };
+  async function check(id, name, run) {
+    if (id && !applies(id)) {
+      skipped.push(name);
+      return;
+    }
     try {
       checks.push({ name, ...await run() });
     } catch (error) {
@@ -41,7 +65,7 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
     }
     return Buffer.from(file.content, 'base64').toString('utf8');
   };
-  await check('Secret scanning and push protection', async () => {
+  await check('secret-scanning', 'Secret scanning and push protection', async () => {
     const security = metadata.security_and_analysis;
     if (!security?.secret_scanning || !security?.secret_scanning_push_protection) {
       return unknown('Security settings are not visible to this token or available on this plan.');
@@ -50,7 +74,7 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
       security.secret_scanning_push_protection.status === 'enabled'
       ? pass('Both repository settings are enabled.') : fail('Enable both repository settings.');
   });
-  await check('Dependabot alerts', async () => {
+  await check('dependabot-alerts', 'Dependabot alerts', async () => {
     try {
       await api.request('GET', `${root}/vulnerability-alerts`);
       return pass('Dependabot alerts are enabled; human triage is still required.');
@@ -61,7 +85,7 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
   });
   const ref = await api.request('GET', `${root}/branches/${encodeURIComponent(branch)}`);
   const sha = ref.commit.sha;
-  await check('Code scanning at the default-branch head', async () => {
+  await check('code-scanning', 'Code scanning at the default-branch head', async () => {
     const analyses = await api.request('GET',
       `${root}/code-scanning/analyses?ref=${encodeURIComponent(`refs/heads/${branch}`)}&per_page=100`);
     const cutoff = now - policy.scan_max_age_days * 86_400_000;
@@ -70,7 +94,7 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
       ? pass(`Successful analysis at ${sha.slice(0, 12)} within ${policy.scan_max_age_days} days; findings need review.`)
       : fail('No recent successful analysis of the current default-branch commit was found among the latest 100 analyses.');
   });
-  await check('Default-branch pull request reviews', async () => {
+  await check('branch-reviews', 'Default-branch pull request reviews', async () => {
     const reviews = protection => (protection?.required_pull_request_reviews?.required_approving_review_count ?? 0) >= 1;
     let classic;
     try {
@@ -85,11 +109,11 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
       ? pass('An active applicable ruleset requires pull requests and approvals; review bypass separately.')
       : fail('Require pull requests and at least one approval on the default branch.');
   });
-  for (const [name, paths] of [
-    ['CODEOWNERS', ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']],
-    ['SECURITY.md', ['.github/SECURITY.md', 'SECURITY.md', 'docs/SECURITY.md']],
+  for (const [id, name, paths] of [
+    ['codeowners', 'CODEOWNERS', ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']],
+    ['security-policy', 'SECURITY.md', ['.github/SECURITY.md', 'SECURITY.md', 'docs/SECURITY.md']],
   ]) {
-    await check(name, async () => {
+    await check(id, name, async () => {
       for (const path of paths) {
         try {
           const text = await content(path, sha);
@@ -106,7 +130,7 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
       return fail(`Add a substantive ${name} file at a recognized location.`);
     });
   }
-  await check('No committed .env files at head', async () => {
+  await check('env-files', 'No committed .env files at head', async () => {
     const tree = await api.request('GET', `${root}/git/trees/${sha}?recursive=1`);
     if (tree.truncated) return unknown('Repository tree is truncated; a full approved local scan is required.');
     const unsafe = unsafeEnvPaths(tree.tree);
@@ -114,7 +138,11 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
     return unsafe.length ? fail(`${unsafe.length} non-template .env file(s) found. Remove and assess credential rotation.`)
       : pass('No non-template .env filenames found at head. This is not a scan of contents or history.');
   });
-  await check('OIDC Azure deployment workflow', async () => {
+  const providers = (checkConfig['deployment-oidc'] ?? defaultCheckConfig['deployment-oidc']).providers ?? ['azure'];
+  const clouds = providers.map(provider => providerLabels[provider]).join(', ');
+  const oidcName = providers.length === 1 && providers[0] === 'azure'
+    ? 'OIDC Azure deployment workflow' : `OIDC deployment workflow (${clouds})`;
+  await check('deployment-oidc', oidcName, async () => {
     const workflows = await api.request('GET', `${root}/contents/.github/workflows?ref=${encodeURIComponent(sha)}`);
     for (const file of workflows.filter(file => /\.ya?ml$/.test(file.name))) {
       const text = await content(`.github/workflows/${encodeURIComponent(file.name)}`, sha);
@@ -124,13 +152,14 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
       } catch {
         return unknown('A deployment workflow cannot be parsed safely; inspect its YAML manually. No repository file contents were logged.');
       }
-      if (hasOidcDeployment(workflow)) {
-        return pass('Azure login with id-token: write and federated identifiers found. Verify enabled workflow, cloud trust, environment reviewers, and an actual deployment manually.');
+      if (hasOidcDeployment(workflow, providers)) {
+        return pass(`${clouds} OIDC login with id-token: write and federated identifiers found. Verify enabled workflow, cloud trust, environment reviewers, and an actual deployment manually.`);
       }
     }
-    return fail('No Azure OIDC workflow pattern found. Non-Azure deployments need an approved equivalent and manual governance review.');
+    return fail(`No ${clouds} OIDC workflow pattern found. Other deployment targets need an approved equivalent and manual governance review.`);
   });
-  await check('Default-branch validation basis', async () => {
+  // Always runs: it binds every other result to one commit.
+  await check(null, 'Default-branch validation basis', async () => {
     const latestMetadata = await api.request('GET', root);
     if (latestMetadata.default_branch !== branch) {
       return fail(`Default branch changed during validation (${branch} to ${latestMetadata.default_branch}); rerun validation.`);
@@ -140,10 +169,10 @@ export async function automatedChecks(api, repository, metadata, policy, now = D
       ? pass(`All automated checks used the current default-branch commit ${sha}.`)
       : fail(`Default branch changed during validation (${sha} to ${latest.commit.sha}); rerun validation.`);
   });
-  return { checks, commitSha: sha };
+  return { checks, commitSha: sha, skipped };
 }
 
-export function validationReport(plans, checks, handoff = '') {
+export function validationReport(plans, checks, handoff = '', skipped = []) {
   const incomplete = plans.filter(plan => !plan.existing || plan.existing.state !== 'closed' ||
     plan.existing.state_reason !== 'completed');
   const ready = plans.length > 0 && checks.length > 0 && incomplete.length === 0 &&
@@ -158,6 +187,7 @@ export function validationReport(plans, checks, handoff = '') {
     '| Automated check | Status | Detail |',
     '| --- | --- | --- |',
     ...checks.map(check => `| ${check.name} | ${check.status} | ${check.detail} |`),
+    ...(skipped.length ? ['', `Not run for this tier under hub configuration (config/checks.yml): ${skipped.join(', ')}. Governance must decide whether manual evidence covers them.`] : []),
     '',
     'UNKNOWN is a blocking gap, not a pass. Closing an issue as not planned or duplicate does not satisfy the gate.',
     'These are configuration signals, not a security audit or compliance certification. They do not verify cloud state, resolved alerts, or evidence quality.',

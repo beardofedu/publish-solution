@@ -128,7 +128,7 @@ test('intake creates one parent and required children; reruns do not duplicate o
   assert.equal(f.controls.length, 12);
   assert.equal(f.links.size, 11);
   const identity = f.controls.find(issue => issue.body.includes(marker(hub, 1, 'identity')));
-  assert(identity.body.includes('**Lead:** platform'));
+  assert(identity.body.includes('**Lead:** Platform engineering (`platform`)'));
   assert(identity.body.includes('Complete [**ownership**]('));
   assert(identity.body.includes('### Examples a reviewer can assess'));
   assert(identity.body.includes('A login screen'));

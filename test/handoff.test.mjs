@@ -14,6 +14,7 @@ test('handoff separates prepared evidence from human decisions and escapes intak
       { control: { id: 'data-protection' }, existing: { state: 'open', html_url: 'https://github.com/example/solution/issues/3' } },
     ],
     checks: [{ name: 'Live cloud trust', status: 'UNKNOWN', detail: 'Cannot verify cloud state.' }],
+    skipped: ['CODEOWNERS'],
     commitSha: 'abc123',
     validatedAt: '2026-10-22T12:00:00.000Z',
   });
@@ -21,6 +22,7 @@ test('handoff separates prepared evidence from human decisions and escapes intak
   assert(markdown.includes('Validation basis:** `abc123`'));
   assert(markdown.includes('Completed — `identity`'));
   assert(markdown.includes('UNKNOWN — Live cloud trust'));
+  assert(markdown.includes('NOT RUN — CODEOWNERS'));
   assert(markdown.includes('PENDING (approve / reject / defer)'));
   assert(markdown.includes('Acceptance: PENDING'));
   assert(markdown.includes('team\\`x'));
