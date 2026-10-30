@@ -1,5 +1,5 @@
-import { controlBody, deriveTier, fingerprint, marker, parseIntake, planIssues, tiers } from './model.mjs';
-import { automatedChecks, validationReport } from './checks.mjs';
+import { controlBody, deriveTier, fingerprint, marker, parseIntake, planIssues, tierLabel } from './model.mjs';
+import { automatedChecks, effectiveCheckPolicy, validationReport } from './checks.mjs';
 import { setLabels, upsertComment } from './github.mjs';
 import { renderHandoff } from './handoff.mjs';
 import { linkedExceptions } from './lifecycle.mjs';
@@ -103,7 +103,7 @@ export async function intakeRequest({ hubApi, targetApi, hub, issue, config }) {
         title: `[Publication] ${plan.control.title}`,
         body: controlBody(plan.control, plan.marker, {
           source: issue.html_url, tier, guide: config.policy.guide_url.replace(/\/$/, ''),
-          workPackages: config.workPackages,
+          workPackages: config.workPackages, roles: config.roles,
           dependencyUrls: Object.fromEntries(plans.filter(item => item.existing)
             .map(item => [item.control.id, item.existing.html_url])),
         }),
@@ -113,7 +113,7 @@ export async function intakeRequest({ hubApi, targetApi, hub, issue, config }) {
       await targetApi.request('POST', `${root}/issues/${plan.existing.number}/comments`, {
         body: `Publication scope or control requirements changed (or intake is recovering a partial run). Reconfirm evidence before closing.\n\n${controlBody(plan.control, plan.marker, {
           source: issue.html_url, tier, guide: config.policy.guide_url.replace(/\/$/, ''),
-          workPackages: config.workPackages,
+          workPackages: config.workPackages, roles: config.roles,
           dependencyUrls: Object.fromEntries(plans.filter(item => item.existing)
             .map(item => [item.control.id, item.existing.html_url])),
         })}`,
@@ -137,8 +137,8 @@ export async function intakeRequest({ hubApi, targetApi, hub, issue, config }) {
   const state = { repository: intake.repository, basis, parent: parent.number };
   await upsertComment(hubApi, hub, issue.number, stateTag,
     `<!-- state-json:${JSON.stringify(state)} -->\n## Publication plan: ${tier}\n\n[Parent tracking issue](${parent.html_url})\n\n${checklist.join('\n')}\n\n${warnings.join('\n')}\n\nWhen evidence is complete, ask a maintainer to comment \`/validate\`. Changes to intake or catalog require \`/publish\` again and reopen required controls.`);
-  await setLabels(hubApi, hub, issue.number, [`risk:${tier.toLowerCase()}`, 'publication-request'],
-    [...tiers.filter(value => value !== tier).map(value => `risk:${value.toLowerCase()}`), 'onboarding-pending']);
+  await setLabels(hubApi, hub, issue.number, [tierLabel(tier), 'publication-request'],
+    [...config.tierConfig.levels.filter(value => value !== tier).map(tierLabel), 'onboarding-pending']);
   return { parent, plans, tier, warnings };
 }
 
@@ -158,10 +158,16 @@ export async function validateRequest({ hubApi, targetApi, hub, issue, config })
   if (metadata.archived || metadata.disabled || !metadata.has_issues) throw new Error('The solution repository is not active.');
   const existing = await targetApi.pages(`${root}/issues?state=all`);
   let plans = planIssues(config.catalog, tier, existing, hub, issue.number, intake.ai);
-  const { checks, commitSha } = await automatedChecks(targetApi, intake.repository, metadata, config.policy);
+  const { checks, commitSha, skipped } = await automatedChecks(targetApi, intake.repository, metadata, config.policy, {
+    tier, checkConfig: config.checks,
+  });
+  const validationBasis = fingerprint({
+    commitSha,
+    checkPolicy: effectiveCheckPolicy(tier, config.checks),
+  });
   const latestExisting = await targetApi.pages(`${root}/issues?state=all`);
   plans = planIssues(config.catalog, tier, latestExisting, hub, issue.number, intake.ai);
-  if (previousBasis !== commitSha) await clearGate(hubApi, hub, issue.number);
+  if (previousBasis !== validationBasis) await clearGate(hubApi, hub, issue.number);
   const parent = latestExisting.find(item => item.number === state.parent &&
     item.body?.includes(marker(hub, issue.number, 'parent')));
   if (!parent) checks.push({ name: 'Tracking issue', status: 'FAIL', detail: 'Tracking issue is missing. Rerun /publish.' });
@@ -173,9 +179,9 @@ export async function validateRequest({ hubApi, targetApi, hub, issue, config })
   }
   const validatedAt = new Date().toISOString();
   const handoff = renderHandoff({
-    issue: live, intake, tier, plans, checks, exceptions, commitSha, validatedAt,
+    issue: live, intake, tier, plans, checks, skipped, exceptions, commitSha, validationBasis, validatedAt,
   });
-  const report = validationReport(plans, checks, handoff);
+  const report = validationReport(plans, checks, handoff, skipped);
   if (parent) {
     const checklist = plans.map(plan => plan.existing
       ? `- [${plan.existing.state === 'closed' && plan.existing.state_reason === 'completed' ? 'x' : ' '}] ${plan.existing.html_url}`

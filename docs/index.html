@@ -27,7 +27,7 @@
     <section class="card"><div class="number">04 / REVIEW</div><h3>Get a human decision</h3><p>A clean automated report earns <code>ready-for-review</code>, not deployment permission. Governance reviews evidence and decides whether to apply <code>approved-for-production</code>.</p></section>
   </div>
   <h2 id="risk-tiers">Risk changes the work, not the accountability</h2>
-  <div class="table-wrap"><table><caption>Default risk tiers; organizations can customize the rules</caption><thead><tr><th scope="col">Tier</th><th scope="col">Typical signals</th><th scope="col">What changes</th></tr></thead><tbody>
+  <div class="table-wrap"><table><caption>Default risk tiers; organizations can rename or add tiers and customize the rules</caption><thead><tr><th scope="col">Tier</th><th scope="col">Typical signals</th><th scope="col">What changes</th></tr></thead><tbody>
     <tr><th scope="row">Low</th><td>Internal, public/internal data, small team, read-only integrations, no runtime AI.</td><td>Core controls across ownership, security, delivery, and operations.</td></tr>
     <tr><th scope="row">Moderate</th><td>Confidential data, organization-wide/public audience, business-system writes, or calls to a large language model (LLM) at runtime.</td><td>Add recovery/capacity exercises; runtime AI adds its own control.</td></tr>
     <tr><th scope="row">High</th><td>External exposure, personal (PII), health (PHI), payment-card (PCI), or other regulated data; privileged integrations.</td><td>Add independent security/privacy review and explicit residual-risk acceptance.</td></tr>

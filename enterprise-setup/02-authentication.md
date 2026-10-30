@@ -70,7 +70,7 @@ Use [SETUP.md](../SETUP.md#recommended-github-app) as the naming contract and ve
 | Repository/requester boundary | `allowed_repositories`, `requester_permissions` | `config/policy.yml` | `<owner>` | `<reviewed PR>` |
 | Onboarding PR opt-in/settings link | `onboarding_prs` (default `false`), `onboarding_installation_id` (required when enabled; from Configure URL) | `config/policy.yml`; hub Actions PR-creation setting | `<owner>` | `<reviewed PR/setting evidence>` |
 | Guide/scan freshness policy | `guide_url`, `scan_max_age_days` | `config/policy.yml`; stock freshness 30 days | `<owner>` | `<reviewed PR>` |
-| Request/tier/status labels | `publication-request`, `risk:low`, `risk:moderate`, `risk:high`, `ready-for-review`, `approved-for-production` | Intake repository; reconcile against scripts | `<owner>` | `<label inventory>` |
+| Request/tier/status labels | `publication-request`, one `risk:<tier>` label per `config/tiers.yml` level (stock: `risk:low`, `risk:moderate`, `risk:high`), `ready-for-review`, `approved-for-production` | Intake repository; reconcile against scripts | `<owner>` | `<label inventory>` |
 | Pages environment | `github-pages` | Intake repository | `<owner>` | `<protection evidence>` |
 | Production deployment environment | `production` in Azure example; consumer-configured | Solution repository; not created by intake | `<owner>` | `<protection evidence>` |
 | Azure IDs, if consumed | `<exact workflow names>` | `<solution environment secrets/variables as implemented>` | `<cloud owner>` | `<link>` |

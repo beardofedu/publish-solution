@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, cp, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { controlBody, deriveTier, fields, fingerprint, hasLabel, loadConfig, marker, parseIntake, planIssues } from '../scripts/model.mjs';
+import { controlBody, deriveTier, fields, fingerprint, hasLabel, loadConfig, marker, parseIntake, planIssues, tierLabel } from '../scripts/model.mjs';
 
 export const answers = {
   repository: 'Example/Solution', business: 'business-team', technical: 'platform-team',
@@ -135,6 +135,75 @@ test('catalog rejects malformed controls and policy; tier precedence is normaliz
     await assert.rejects(loadConfig(directory), /Cyclic work-package dependency/);
     await writeFile(join(directory, 'config/policy.yml'), 'allowed_repositories: ["https://evil.example/repo"]\n');
     await assert.rejects(loadConfig(directory), /Invalid config/);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test('custom tier levels, roles and check settings load and are validated', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'publish-solution-test-'));
+  try {
+    for (const path of ['controls', 'config']) await cp(path, join(directory, path), { recursive: true });
+    const write = (path, text) => writeFile(join(directory, path), text);
+    const ownershipPath = join(directory, 'controls/01-ownership.yml');
+    const ownership = await readFile(ownershipPath, 'utf8');
+    await write('config/tiers.yml', 'levels: [Low, Moderate, High, Business Critical]\ndefault: Low\nrules:\n' +
+      '  - tier: High\n    any:\n      exposure: [External]\n  - tier: Business Critical\n    any:\n      data: [PHI]\n');
+    await assert.rejects(loadConfig(directory), /unconditional controls for every tier/);
+    await writeFile(ownershipPath, ownership.replace(/^tiers: \[.*\]$/m, 'tiers: [Low, Moderate, High, Business Critical]'));
+    let config = await loadConfig(directory);
+    assert.deepEqual(config.tierConfig.levels, ['Low', 'Moderate', 'High', 'Business Critical']);
+    assert.equal(deriveTier({ ...answers, data: 'PHI', exposure: 'External' }, config.tierConfig), 'Business Critical');
+    assert.equal(tierLabel('Business Critical'), 'risk:business-critical');
+    assert.equal(planIssues(config.catalog, 'Business Critical', [], 'hub/repo', 1, 'No').length, 1);
+    for (const levels of ['[]', '[low]', '[Low, Low]', '[Low, LOW]', '"Low"']) {
+      await write('config/tiers.yml', `levels: ${levels}\ndefault: Low\nrules: []\n`);
+      await assert.rejects(loadConfig(directory), /Invalid config\/tiers.yml/, levels);
+    }
+    await writeFile(ownershipPath, ownership);
+    await cp('config/tiers.yml', join(directory, 'config/tiers.yml'));
+
+    await rm(join(directory, 'config/roles.yml'));
+    await rm(join(directory, 'config/checks.yml'));
+    config = await loadConfig(directory);
+    assert.equal(config.roles.platform.name, 'Platform engineering');
+    assert.deepEqual(config.checks['deployment-oidc'].providers, ['azure']);
+    assert(Object.values(config.checks).every(check => check.enabled));
+
+    const packagesPath = join(directory, 'config/work-packages.yml');
+    const packages = await readFile(packagesPath, 'utf8');
+    await write('config/roles.yml', 'roles:\n  citizen: { name: Maker }\n  platform: { name: Cloud Center of Excellence }\n' +
+      '  security: { name: AppSec }\n  data: { name: Privacy }\n  architecture: { name: Enterprise architecture }\n');
+    await writeFile(packagesPath, packages.replace('supporting_roles: [platform, data]', 'supporting_roles: [platform, architecture]'));
+    config = await loadConfig(directory);
+    const body = controlBody(config.catalog[0], 'tag', {
+      source: 'src', tier: 'Low', guide: 'https://example.github.io/hub', workPackages: config.workPackages, roles: config.roles,
+    });
+    assert(body.includes('**Lead:** Maker (`citizen`)'));
+    assert(body.includes('Enterprise architecture (`architecture`)'));
+    await write('config/roles.yml', 'roles:\n  citizen: { name: Maker }\n');
+    await assert.rejects(loadConfig(directory), /Invalid work package/);
+    for (const roles of ['roles: []', 'roles:\n  Bad_Id: { name: X }', 'roles:\n  citizen: {}', 'other: 1']) {
+      await write('config/roles.yml', roles);
+      await assert.rejects(loadConfig(directory), /Invalid config\/roles.yml/, roles);
+    }
+    await writeFile(packagesPath, packages);
+    await cp('config/roles.yml', join(directory, 'config/roles.yml'));
+
+    await write('config/checks.yml', 'checks:\n  code-scanning: { tiers: [Moderate, High] }\n' +
+      '  env-files: { enabled: false }\n  deployment-oidc: { providers: [aws, gcp] }\n');
+    config = await loadConfig(directory);
+    assert.deepEqual(config.checks['code-scanning'], { enabled: true, tiers: ['Moderate', 'High'] });
+    assert.equal(config.checks['env-files'].enabled, false);
+    assert.deepEqual(config.checks['deployment-oidc'].providers, ['aws', 'gcp']);
+    assert.deepEqual(config.checks['secret-scanning'].tiers, ['Low', 'Moderate', 'High']);
+    for (const checks of ['checks:\n  unknown-check: { enabled: false }', 'checks:\n  env-files: { enabled: "no" }',
+      'checks:\n  env-files: { tiers: [Critical] }', 'checks:\n  env-files: { tiers: [] }',
+      'checks:\n  env-files: { providers: [aws] }', 'checks:\n  deployment-oidc: { providers: [oracle] }',
+      'checks: []', 'other: 1']) {
+      await write('config/checks.yml', checks);
+      await assert.rejects(loadConfig(directory), /Invalid config\/checks.yml/, checks);
+    }
   } finally {
     await rm(directory, { recursive: true });
   }

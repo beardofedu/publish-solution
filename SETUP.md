@@ -198,7 +198,7 @@ Repeat all three scope updates for every new target: add it to the App installat
 | No native sub-issues | Inspect the fallback note; the parent task list and independent validation still work |
 | Controls closed but not ready | Close as completed (not duplicate/not planned), inspect automated FAIL/UNKNOWN checks, and verify the current catalog/intake basis |
 | Scan exists but fails gate | The latest 100 analyses must include a successful, recent analysis at the exact current default-branch commit |
-| Non-Azure OIDC | The stock detector is Azure-specific; implement and test an approved equivalent or record a separate human decision |
+| Non-Azure OIDC | The detector defaults to Azure. Set `deployment-oidc.providers` in `config/checks.yml` to `aws` or `gcp`; for other clouds implement and test an approved equivalent or record a separate human decision |
 | State missing / duplicate markers | Investigate target issues and bot state before retrying; do not hide duplicates by closing them |
 | Approved label removed | Intake changes, a changed default-branch commit, failed validation, or detected gaps invalidate the old advisory decision; review again |
 

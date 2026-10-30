@@ -10,12 +10,12 @@
 <tr><td>FAIL</td><td>A required condition was not met.</td></tr>
 <tr><td>UNKNOWN</td><td>Permissions, plan, API visibility, or another limit prevented verification.</td></tr>
 </tbody></table></div>
-<p><strong>FAIL and UNKNOWN both block <code>ready-for-review</code>.</strong> Every applicable control issue must exist and be closed <em>as completed</em>, not “not planned” or “duplicate.”</p>
+<p><strong>FAIL and UNKNOWN both block <code>ready-for-review</code>.</strong> Checks the hub disables or limits to other tiers in <code>config/checks.yml</code> appear as <strong>NOT RUN</strong> in the report and handoff package; reviewers decide whether manual evidence covers them. Every applicable control issue must exist and be closed <em>as completed</em>, not “not planned” or “duplicate.”</p>
 <div class="table-wrap"><table><thead><tr><th scope="col">Automated signals</th><th scope="col">Not proved by those signals</th></tr></thead><tbody>
 <tr><td>Secret scanning/push protection and Dependabot enablement</td><td>Alert remediation or full-history secret hygiene</td></tr>
 <tr><td>Recent successful code-scanning analysis at the current default-branch commit</td><td>A particular scanner or absence of vulnerabilities</td></tr>
 <tr><td>Applicable PR approval protection, substantive CODEOWNERS/SECURITY.md, and .env filenames</td><td>Bypass actors, valid owner teams/reporting routes, or secret contents</td></tr>
-<tr><td>Azure OpenID Connect (OIDC) workflow pattern</td><td>Enabled workflow, actual deployment, live cloud trust/configuration, or evidence quality</td></tr>
+<tr><td>OpenID Connect (OIDC) workflow pattern for the configured cloud (Azure by default; AWS or Google Cloud optional)</td><td>Enabled workflow, actual deployment, live cloud trust/configuration, or evidence quality</td></tr>
 </tbody></table></div>
 <p>Keep requests open for daily validation; closed requests are not revalidated. Changed risk answers or control requirements need <code>/publish</code>; <a href="requests.html#reassessment">metadata-only changes may need manual reopening</a>. A new target requires a new request.</p>
 <aside class="notice"><strong>Readiness is a point-in-time signal.</strong> A target commit, issue, permission, or cloud configuration can change after a report. Daily checks can lag; closed requests are not revalidated. Labels are advisory and mutable by repository collaborators. Do not build a production authorization boundary around these labels.</aside>

@@ -4,7 +4,7 @@
 
 A public, adaptable toolkit for citizen developers turning AI-built prototypes into maintainable, secure solutions. An intake issue generates a risk-tiered publication plan **in the solution's own repository**, with actionable controls, evidence requirements, Copilot prompts, and a parent tracking issue.
 
-**[Read the rendered guide](https://beardofedu.github.io/publish-solution/)** · [Set up your instance](SETUP.md) · [Customize controls](CUSTOMIZING.md)
+**[Read the rendered guide](https://beardofedu.github.io/publish-solution/)** · [Set up your instance](SETUP.md) · [Customize tiers, roles, checks and controls](CUSTOMIZING.md)
 
 **Administrators:** start with the [installation walkthrough](https://beardofedu.github.io/publish-solution/setup.html). The **hub** is your governance repository; it creates plans in separate **solution repositories**. Issue generation needs no target toolkit workflow or Azure credentials. Use the [enterprise readiness runbook](enterprise-setup/README.md#complete-these-gates-in-order) for workload-launch evidence.
 
@@ -41,7 +41,7 @@ The highest matching risk tier wins; see the [configurable tier guide](https://b
 | --- | --- |
 | `.github/ISSUE_TEMPLATE/` | Structured intake with public-data warning |
 | `.github/workflows/` | Intake, repository onboarding checks, validation, daily sweep, CI, and Pages publication |
-| `config/` | Exact target allowlist, trigger permissions, tier rules, and per-control role/dependency/evidence packages |
+| `config/` | Exact target allowlist, trigger permissions, tier names and rules, accountable roles, automated-check settings, and per-control role/dependency/evidence packages |
 | `controls/*.yml` | 14 control definitions covering ownership, repo hygiene, secrets, dependencies, code scanning, identity, data, AI, delivery, runtime, operations, resilience, and independent review |
 | `scripts/` | Node.js automation, optional preview-first bootstrap, read-only setup diagnostics, lifecycle reminders, API client, conservative detectors, catalog validation |
 | `examples/` | Local-only reference app and a fully synthetic start-to-handoff walkthrough |
@@ -76,6 +76,6 @@ This toolkit is **not a compliance certification, penetration test, cloud scanne
 
 Daily lifecycle sweeps add due/expired/incomplete exception reminders but never renew exceptions or bypass FAIL/UNKNOWN checks. Opening or editing an authorized reassessment clears advisory labels on its linked original publication request; governance still updates that original request and reruns `/publish`.
 
-**Stock support is GitHub.com only**; other hosts need a [tested adaptation](enterprise-setup/README.md#deployment-scope-and-documentation-currency). Controls are cloud-agnostic, but the stock deployment-identity check is Azure-specific. Other clouds need a reviewed, tested detector or a separate governance decision that does not claim an automated PASS. No customer-specific data or policies are included.
+**Stock support is GitHub.com only**; other hosts need a [tested adaptation](enterprise-setup/README.md#deployment-scope-and-documentation-currency). Controls are cloud-agnostic. The deployment-identity check defaults to Azure; `config/checks.yml` can switch it to AWS or Google Cloud OIDC. Other clouds need a reviewed, tested detector or a separate governance decision that does not claim an automated PASS. No customer-specific data or policies are included.
 
 MIT licensed. See [SECURITY.md](SECURITY.md) for reporting and [CONTRIBUTING.md](CONTRIBUTING.md) for changes.
