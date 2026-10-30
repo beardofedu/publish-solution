@@ -259,6 +259,27 @@ test('a changed default-branch commit invalidates the prior approval even if che
   assert(!f.labels.has('approved-for-production'));
 });
 
+test('a changed effective check policy invalidates the prior approval', async () => {
+  for (const changePolicy of [
+    checks => { checks['env-files'].enabled = false; },
+    checks => { checks['env-files'].tiers = ['High']; },
+  ]) {
+    const f = await fixture({ checksPass: true });
+    await intakeRequest(f.args);
+    f.controls.filter(issue => !issue.body.includes(marker(hub, 1, 'parent'))).forEach(issue => {
+      issue.state = 'closed';
+      issue.state_reason = 'completed';
+    });
+    await validateRequest(f.args);
+    f.labels.add('approved-for-production');
+    changePolicy(f.args.config.checks);
+    const report = await validateRequest(f.args);
+    assert.equal(report.ready, true, report.body);
+    assert(report.body.includes('NOT RUN'));
+    assert(!f.labels.has('approved-for-production'));
+  }
+});
+
 test('untrusted state comments cannot replace the hub bot audit record', async () => {
   const f = await fixture();
   f.comments.push({

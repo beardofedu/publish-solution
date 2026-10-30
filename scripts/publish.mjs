@@ -1,5 +1,5 @@
 import { controlBody, deriveTier, fingerprint, marker, parseIntake, planIssues, tierLabel } from './model.mjs';
-import { automatedChecks, validationReport } from './checks.mjs';
+import { automatedChecks, effectiveCheckPolicy, validationReport } from './checks.mjs';
 import { setLabels, upsertComment } from './github.mjs';
 import { renderHandoff } from './handoff.mjs';
 import { linkedExceptions } from './lifecycle.mjs';
@@ -161,9 +161,13 @@ export async function validateRequest({ hubApi, targetApi, hub, issue, config })
   const { checks, commitSha, skipped } = await automatedChecks(targetApi, intake.repository, metadata, config.policy, {
     tier, checkConfig: config.checks,
   });
+  const validationBasis = fingerprint({
+    commitSha,
+    checkPolicy: effectiveCheckPolicy(tier, config.checks),
+  });
   const latestExisting = await targetApi.pages(`${root}/issues?state=all`);
   plans = planIssues(config.catalog, tier, latestExisting, hub, issue.number, intake.ai);
-  if (previousBasis !== commitSha) await clearGate(hubApi, hub, issue.number);
+  if (previousBasis !== validationBasis) await clearGate(hubApi, hub, issue.number);
   const parent = latestExisting.find(item => item.number === state.parent &&
     item.body?.includes(marker(hub, issue.number, 'parent')));
   if (!parent) checks.push({ name: 'Tracking issue', status: 'FAIL', detail: 'Tracking issue is missing. Rerun /publish.' });
@@ -175,7 +179,7 @@ export async function validateRequest({ hubApi, targetApi, hub, issue, config })
   }
   const validatedAt = new Date().toISOString();
   const handoff = renderHandoff({
-    issue: live, intake, tier, plans, checks, skipped, exceptions, commitSha, validatedAt,
+    issue: live, intake, tier, plans, checks, skipped, exceptions, commitSha, validationBasis, validatedAt,
   });
   const report = validationReport(plans, checks, handoff, skipped);
   if (parent) {

@@ -16,10 +16,12 @@ test('handoff separates prepared evidence from human decisions and escapes intak
     checks: [{ name: 'Live cloud trust', status: 'UNKNOWN', detail: 'Cannot verify cloud state.' }],
     skipped: ['CODEOWNERS'],
     commitSha: 'abc123',
+    validationBasis: 'def456',
     validatedAt: '2026-10-22T12:00:00.000Z',
   });
   assert(markdown.includes('**Package state:** Prepared with gaps'));
-  assert(markdown.includes('Validation basis:** `abc123`'));
+  assert(markdown.includes('Validation basis:** `def456`'));
+  assert(markdown.includes('Target commit:** `abc123`'));
   assert(markdown.includes('Completed — `identity`'));
   assert(markdown.includes('UNKNOWN — Live cloud trust'));
   assert(markdown.includes('NOT RUN — CODEOWNERS'));

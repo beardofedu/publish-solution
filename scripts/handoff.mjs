@@ -1,6 +1,6 @@
 const safeText = value => String(value).replace(/[\\`*_{}[\]()#+\-.!|>]/g, '\\$&');
 
-export function renderHandoff({ issue, intake, tier, plans, checks, skipped = [], exceptions = [], commitSha, validatedAt }) {
+export function renderHandoff({ issue, intake, tier, plans, checks, skipped = [], exceptions = [], commitSha, validationBasis, validatedAt }) {
   const controls = plans.map(plan => {
     const completed = plan.existing?.state === 'closed' && plan.existing?.state_reason === 'completed';
     return `- ${completed ? 'Completed' : 'Open'} — \`${plan.control.id}\` — ${plan.existing?.html_url ?? 'Missing; rerun /publish'}. Review the issue and its evidence comments; closure alone is not evidence.`;
@@ -17,7 +17,8 @@ export function renderHandoff({ issue, intake, tier, plans, checks, skipped = []
     '',
     `**Package state:** Prepared${gaps.length || openControls.length ? ' with gaps' : ' for review'} (machine-generated; not a decision).`,
     `**Validation time (UTC):** ${validatedAt}`,
-    `**Validation basis:** ${commitSha ? `\`${commitSha}\`` : 'Unknown; validation is not current.'}`,
+    `**Validation basis:** ${validationBasis ? `\`${validationBasis}\`` : 'Unknown; validation is not current.'}`,
+    `**Target commit:** ${commitSha ? `\`${commitSha}\`` : 'Unknown.'}`,
     `**Original request:** ${issue.html_url}`,
     `**Solution repository:** ${intake.repository}`,
     `**Risk tier:** ${tier}`,

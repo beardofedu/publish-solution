@@ -6,15 +6,20 @@ const fail = detail => ({ status: 'FAIL', detail });
 const unknown = detail => ({ status: 'UNKNOWN', detail });
 
 const providerLabels = { azure: 'Azure', aws: 'AWS', gcp: 'Google Cloud' };
+const hasUnresolvedExpression = value => typeof value === 'string' && /\$\{\{|\}\}/.test(value);
+const literalInput = value => typeof value === 'string' && value.trim() && !hasUnresolvedExpression(value);
+const explicitlyFalse = value => value === false || (typeof value === 'string' && value.trim().toLowerCase() === 'false');
 const oidcLogins = {
   azure: step => /^azure\/login@/i.test(step.uses ?? '') &&
     step.with?.['client-id'] && step.with?.['tenant-id'] &&
     step.with?.['subscription-id'] && !step.with?.creds &&
     step.with?.['auth-type'] !== 'IDENTITY',
   aws: step => /^aws-actions\/configure-aws-credentials@/i.test(step.uses ?? '') &&
-    step.with?.['role-to-assume'] && step.with?.['aws-region'] &&
+    literalInput(step.with?.['role-to-assume']) && literalInput(step.with?.['aws-region']) &&
     !step.with?.['aws-access-key-id'] && !step.with?.['aws-secret-access-key'] &&
-    !step.with?.['aws-session-token'] && !step.with?.['web-identity-token-file'],
+    !step.with?.['aws-session-token'] && !step.with?.['web-identity-token-file'] &&
+    ['role-chaining', 'use-existing-credentials'].every(key =>
+      !Object.hasOwn(step.with ?? {}, key) || explicitlyFalse(step.with[key])),
   gcp: step => /^google-github-actions\/auth@/i.test(step.uses ?? '') &&
     step.with?.workload_identity_provider && !step.with?.credentials_json,
 };
@@ -35,16 +40,25 @@ export function unsafeEnvPaths(tree) {
 
 const defaultCheckConfig = Object.fromEntries(checkIds.map(id => [id, { enabled: true, ...(id === 'deployment-oidc' ? { providers: ['azure'] } : {}) }]));
 
+export function effectiveCheckPolicy(tier, checkConfig = defaultCheckConfig) {
+  return Object.fromEntries(checkIds.map(id => {
+    const setting = checkConfig[id] ?? defaultCheckConfig[id];
+    const enabled = setting.enabled !== false && (!tier || !setting.tiers || setting.tiers.includes(tier));
+    return [id, {
+      enabled,
+      ...(id === 'deployment-oidc' ? { providers: [...(setting.providers ?? ['azure'])] } : {}),
+    }];
+  }));
+}
+
 export async function automatedChecks(api, repository, metadata, policy,
   { now = Date.now(), tier, checkConfig = defaultCheckConfig } = {}) {
   const root = `/repos/${repository}`;
   const branch = metadata.default_branch;
   const checks = [];
   const skipped = [];
-  const applies = id => {
-    const setting = checkConfig[id] ?? defaultCheckConfig[id];
-    return setting.enabled !== false && (!tier || !setting.tiers || setting.tiers.includes(tier));
-  };
+  const effectivePolicy = effectiveCheckPolicy(tier, checkConfig);
+  const applies = id => effectivePolicy[id].enabled;
   async function check(id, name, run) {
     if (id && !applies(id)) {
       skipped.push(name);
@@ -138,7 +152,7 @@ export async function automatedChecks(api, repository, metadata, policy,
     return unsafe.length ? fail(`${unsafe.length} non-template .env file(s) found. Remove and assess credential rotation.`)
       : pass('No non-template .env filenames found at head. This is not a scan of contents or history.');
   });
-  const providers = (checkConfig['deployment-oidc'] ?? defaultCheckConfig['deployment-oidc']).providers ?? ['azure'];
+  const providers = effectivePolicy['deployment-oidc'].providers;
   const clouds = providers.map(provider => providerLabels[provider]).join(', ');
   const oidcName = providers.length === 1 && providers[0] === 'azure'
     ? 'OIDC Azure deployment workflow' : `OIDC deployment workflow (${clouds})`;

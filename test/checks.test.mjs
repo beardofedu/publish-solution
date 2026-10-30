@@ -162,6 +162,20 @@ test('OIDC detection supports configured AWS and Google Cloud providers', () => 
   const gcpKey = job([{ uses: 'google-github-actions/auth@v2', with: { workload_identity_provider: 'p', credentials_json: 'x' } }]);
   assert.equal(hasOidcDeployment(awsKeys, ['aws']), false);
   assert.equal(hasOidcDeployment(gcpKey, ['gcp']), false);
+  for (const setting of [
+    { 'role-chaining': true },
+    { 'use-existing-credentials': true },
+    { 'role-to-assume': '${{ vars.AWS_ROLE_ARN }}' },
+    { 'aws-region': '${{ inputs.region }}' },
+  ]) {
+    const awsSettings = job([{ uses: 'aws-actions/configure-aws-credentials@v4',
+      with: { 'role-to-assume': 'arn', 'aws-region': 'us-east-1', ...setting } }]);
+    assert.equal(hasOidcDeployment(awsSettings, ['aws']), false);
+  }
+  const awsExplicitlyDisabled = job([{ uses: 'aws-actions/configure-aws-credentials@v4',
+    with: { 'role-to-assume': 'arn', 'aws-region': 'us-east-1', 'role-chaining': false,
+      'use-existing-credentials': 'false' } }]);
+  assert.equal(hasOidcDeployment(awsExplicitlyDisabled, ['aws']), true);
 });
 
 test('disabled and out-of-tier checks are reported as not run, never as PASS', async () => {
